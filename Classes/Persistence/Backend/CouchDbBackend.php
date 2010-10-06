@@ -110,7 +110,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			return $object->FLOW3_Persistence_ValueObject_Hash;
 		} else {
 			$this->validateObject($object);
-			$identifier = $this->createObjectDocument($object, $parentIdentifier);
+
+			// Just get the identifier and register the object, create document with properties later
+			$identifier = $this->getIdentifierFromObject($object);
+			$this->persistenceSession->registerObject($object, $identifier);
+
 			$objectState = self::OBJECTSTATE_NEW;
 		}
 
@@ -125,7 +129,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			if ($objectState === self::OBJECTSTATE_RECONSTITUTED) {
 				$this->validateObject($object);
 			}
-			$this->setProperties($objectData, $objectState);
+			$this->createObjectDocument($object, $objectData);
 		}
 		if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY) {
 			$this->persistenceSession->registerReconstitutedEntity($object, $objectData);
@@ -136,14 +140,22 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Creates a document for the given object and registers it with the identity map.
+	 * Creates a document with inline properties for the given object
 	 *
 	 * @param object $object The object for which to create a node
-	 * @param string $parentIdentifier The identifier of the object's parent, if any
+	 * @param array $objectData
 	 * @return string The identifier of the created record
-	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function createObjectDocument($object, $parentIdentifier = NULL) {
+	protected function createObjectDocument($object, $objectData) {
+		$classSchema = $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()];
+		$identifier = $this->getIdentifierFromObject($object);
+
+		\F3\var_dump($identifier);
+		\F3\var_dump($classSchema->getClassName());
+		\F3\var_dump($objectData);
+
+		return $identifier;
 
 	}
 
