@@ -3,7 +3,7 @@ declare(ENCODING = 'utf-8');
 namespace F3\CouchDB;
 
 /*                                                                        *
- * This script belongs to the FLOW3 framework.                            *
+ * This script belongs to the FLOW3 package "CouchDB".                    *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -29,10 +29,16 @@ namespace F3\CouchDB;
  */
 interface ViewInterface {
 	/**
+	 * Get the design name where the view is defined
+	 * @return string
+	 */
+	public function getDesignName();
+
+	/**
 	 * Get the name of the view
 	 * @return string
 	 */
-	public function getName();
+	public function getViewName();
 
 	/**
 	 * Get the map function for the view as JavaScript source
@@ -45,6 +51,13 @@ interface ViewInterface {
 	 * @return string The function source code or null if no map function defined
 	 */
 	public function getReduceFunctionSource();
+
+	/**
+	 * Get CouchDB query parameters by arguments
+	 * @param array $arguments
+	 * @return array CouchDB view query parameters
+	 */
+	public function getViewParameters($arguments);
 }
 
 ?>
