@@ -231,9 +231,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 						'type' => $propertyType,
 						'multivalue' => FALSE,
 						'value' => array(
-							'identifier' => $this->persistObject($propertyValue, $identifier),
-							'classname' => $propertyType,
-							'properties' => array()
+							'identifier' => $this->persistObject($propertyValue, $identifier)
 						)
 					);
 				}
@@ -331,9 +329,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 					'type' => $type,
 					'index' => $key,
 					'value' => array(
-						'identifier' => $this->persistObject($value, $parentIdentifier),
-						'classname' => $type,
-						'properties' => array()
+						'identifier' => $this->persistObject($value, $parentIdentifier)
 					)
 				);
 			} elseif (is_array($value)) {
@@ -437,9 +433,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 					'type' => $type,
 					'index' => NULL,
 					'value' => array(
-						'identifier' => $this->persistObject($object, $parentIdentifier),
-						'classname' => $type,
-						'properties' => array()
+						'identifier' => $this->persistObject($object, $parentIdentifier)
 					)
 				);
 			}
@@ -602,11 +596,33 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		return $data;
 	}
 
+	/**
+	 * Process a CouchDB result and add metadata and process
+	 * object values by loading objects.
+	 *
+	 * @param array $result The raw result from CouchDB
+	 * @return array
+	 */
 	protected function resultToObjectData($result) {
 		$objectData = json_decode(json_encode($result), TRUE);
 		$objectData['metadata'] = array(
 			'CouchDB_Revision' => $objectData['_rev']
 		);
+		foreach ($objectData['properties'] as $propertyName => $propertyData) {
+			if (!$propertyData['multivalue']) {
+				// Load entity
+				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {
+					$objectData['properties'][$propertyName]['value'] = $this->getObjectDataByIdentifier($propertyData['value']['identifier']);
+				}
+			} else {
+				for ($index = 0; $index < count($propertyData['value']); $index++) {
+					// Load entity
+					if (isset($propertyData['value'][$index]['value']['identifier']) && !isset($propertyData['value'][$index]['value']['classname'])) {
+						$objectData['properties'][$propertyName]['value'][$index]['value'] = $this->getObjectDataByIdentifier($propertyData['value'][$index]['value']['identifier']);
+					}
+				}
+			}
+		}
 		return $objectData;
 	}
 
