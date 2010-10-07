@@ -63,6 +63,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return void
 	 */
 	public function initialize(array $options) {
+		$options = array_filter($options, function($value) {
+			return $value !== NULL;
+		});
 		parent::initialize($options);
 		$this->connect();
 	}
@@ -101,14 +104,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 
 		$classSchema = $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()];
 		if ($this->persistenceSession->hasObject($object)) {
-			if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
-				return $this->persistenceSession->getIdentifierByObject($object);
-			}
 			$identifier = $this->persistenceSession->getIdentifierByObject($object);
 			$objectState = self::OBJECTSTATE_RECONSTITUTED;
 		} else {
-			$this->validateObject($object);
-
 			// Just get the identifier and register the object, create document with properties later
 			$identifier = $this->getIdentifierFromObject($object);
 			$this->persistenceSession->registerObject($object, $identifier);
@@ -118,23 +116,42 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 
 		$this->visitedDuringPersistence[$object] = $identifier;
 
+		$dirty = FALSE;
+
 		$objectData = array(
 			'identifier' => $identifier,
 			'classname' => $classSchema->getClassName(),
-			'properties' => $this->collectProperties($classSchema->getProperties(), $object, $identifier)
+			'properties' => $this->collectProperties($classSchema->getProperties(), $object, $identifier, $dirty),
+			'metadata' => $this->collectMetadata($object)
 		);
-		if (count($objectData['properties'])) {
-			if ($objectState === self::OBJECTSTATE_RECONSTITUTED) {
-				$this->validateObject($object);
-			}
-			$this->createObjectDocument($object, $objectData);
+
+		if ($objectState === self::OBJECTSTATE_NEW || $dirty) {
+			$this->validateObject($object);
+			$this->storeObjectDocument($object, $objectData);
 		}
+
 		if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY) {
 			$this->persistenceSession->registerReconstitutedEntity($object, $objectData);
 		}
 		$this->emitPersistedObject($object, $objectState);
 
 		return $identifier;
+	}
+
+	/**
+	 * Get metadata from Proxy if it was set before. The metadata is used
+	 * to collect information about the current revision and is understood
+	 * by the DataMapper.
+	 *
+	 * @param object $object
+	 * @return array
+	 */
+	protected function collectMetadata($object) {
+		$metadata = NULL;
+		if ($object->FLOW3_AOP_Proxy_hasProperty('FLOW3_Persistence_Metadata')) {
+			$metadata = $object->FLOW3_AOP_Proxy_getProperty('FLOW3_Persistence_Metadata');
+		}
+		return $metadata;
 	}
 
 	/**
@@ -145,9 +162,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return string The identifier of the created record
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function createObjectDocument($object, $objectData) {
+	protected function storeObjectDocument($object, $objectData) {
 		$objectData['_id'] = $objectData['identifier'];
 
+		if (isset($objectData['metadata']) && isset($objectData['metadata']['CouchDB_Revision'])) {
+			$objectData['_rev'] = $objectData['metadata']['CouchDB_Revision'];
+		}
+		unset($objectData['metadata']);
 		$this->client->storeDoc($objectData);
 
 		return $objectData['identifier'];
@@ -160,8 +181,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param object $object The object to work on
 	 * @param string $identifier The object's identifier
 	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function collectProperties(array $properties, $object, $identifier) {
+	protected function collectProperties(array $properties, $object, $identifier, &$dirty) {
 		$propertyData = array();
 		foreach ($properties as $propertyName => $propertyMetaData) {
 			$propertyValue = $object->FLOW3_AOP_Proxy_getProperty($propertyName);
@@ -184,18 +206,24 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 				throw new \F3\FLOW3\Persistence\Exception\UnexpectedTypeException('Expected property of type ' . $propertyType . ', but got ' . gettype($propertyValue) . ' for ' . $object->FLOW3_AOP_Proxy_getProxyTargetClassName() . '::' . $propertyName, 1244465559);
 			}
 
+
+			if ($this->persistenceSession->isDirty($object, $propertyName)) {
+				$dirty = TRUE;
+			}
+
 			if ($propertyValue instanceof \F3\FLOW3\AOP\ProxyInterface) {
 				// TODO Code for value objects is duplicate with code in persistObject
 				$classSchema = $this->classSchemata[$propertyValue->FLOW3_AOP_Proxy_getProxyTargetClassName()];
 				$propertyIdentifier = $this->getIdentifierFromObject($propertyValue);
 				if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
+					$noDirtyOnValueObject = FALSE;
 					$propertyData[$propertyName] = array(
 						'type' => $propertyType,
 						'multivalue' => FALSE,
 						'value' => array(
 							'identifier' => $propertyIdentifier,
 							'classname' => $classSchema->getClassName(),
-							'properties' => $this->collectProperties($classSchema->getProperties(), $propertyValue, $propertyIdentifier)
+							'properties' => $this->collectProperties($classSchema->getProperties(), $propertyValue, $propertyIdentifier, $noDirtyOnValueObject)
 						)
 					);
 				} else {
@@ -203,7 +231,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 						'type' => $propertyType,
 						'multivalue' => FALSE,
 						'value' => array(
-							'identifier' => $this->persistObject($propertyValue, $identifier)
+							'identifier' => $this->persistObject($propertyValue, $identifier),
+							'classname' => $propertyType,
+							'properties' => array()
 						)
 					);
 				}
@@ -272,6 +302,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param array $previousArray the previously persisted state of the array
 	 * @return array An array with "flat" values representing the array
 	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function processArray(array $array = NULL, $parentIdentifier, array $previousArray = NULL) {
 		if ($previousArray !== NULL) {
@@ -295,10 +326,15 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			} elseif ($value instanceof \ArrayObject) {
 				throw new \F3\FLOW3\Persistence\Exception('ArrayObject instances in arrays are not supported - missing feature?!?', 1283524345);
 			} elseif (is_object($value)) {
+				$type = $this->getType($value);
 				$values[] = array(
-					'type' => $this->getType($value),
+					'type' => $type,
 					'index' => $key,
-					'value' => array('identifier' => $this->persistObject($value, $parentIdentifier))
+					'value' => array(
+						'identifier' => $this->persistObject($value, $parentIdentifier),
+						'classname' => $type,
+						'properties' => array()
+					)
 				);
 			} elseif (is_array($value)) {
 				$values[] = array(
@@ -332,7 +368,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			'multivalue' => TRUE,
 			'value' => $this->processArray($nestedArray, $parentIdentifier)
 		);
-		$this->storePropertyData($parentIdentifier, $identifier, $data);
 		return $identifier;
 	}
 
@@ -360,6 +395,81 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 							&& $this->classSchemata[$item['type']]->isAggregateRoot() === FALSE) {
 						$this->removeEntity($this->persistenceSession->getObjectByIdentifier($item['value']['identifier']));
 					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Store an SplObjectStorage inline
+	 *
+	 * @param \SplObjectStorage $splObjectStorage The SplObjectStorage to persist
+	 * @param string $parentIdentifier
+	 * @param array $previousObjectStorage the previously persisted state of the SplObjectStorage
+	 * @return array An array with "flat" values representing the SplObjectStorage
+	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 */
+	protected function processSplObjectStorage(\SplObjectStorage $splObjectStorage = NULL, $parentIdentifier, array $previousObjectStorage = NULL) {
+		if ($previousObjectStorage !== NULL && $previousObjectStorage['value'] !== NULL) {
+			$this->removeDeletedSplObjectStorageEntries($splObjectStorage, $previousObjectStorage['value']);
+		}
+
+		if ($splObjectStorage === NULL) {
+			return NULL;
+		}
+
+		$values = array();
+		foreach ($splObjectStorage as $object) {
+			if ($object instanceof \DateTime) {
+				$values[] = array(
+					'type' => 'DateTime',
+					'index' => NULL,
+					'value' => $object->getTimestamp()
+				);
+			} elseif ($object instanceof \SplObjectStorage) {
+				throw new \F3\FLOW3\Persistence\Exception('SplObjectStorage instances in SplObjectStorage are not supported - missing feature?!?', 1283524360);
+			} elseif ($object instanceof \ArrayObject) {
+				throw new \F3\FLOW3\Persistence\Exception('ArrayObject instances in SplObjectStorage are not supported - missing feature?!?', 1283524350);
+			} else {
+				$type = $this->getType($object);
+				// TODO Handle value object inline!
+				$values[] = array(
+					'type' => $type,
+					'index' => NULL,
+					'value' => array(
+						'identifier' => $this->persistObject($object, $parentIdentifier),
+						'classname' => $type,
+						'properties' => array()
+					)
+				);
+			}
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Remove objects removed from SplObjectStorage compared to
+	 * $previousSplObjectStorage.
+	 *
+	 * @param \SplObjectStorage $splObjectStorage
+	 * @param array $previousObjectStorage
+	 * @return void
+	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 */
+	protected function removeDeletedSplObjectStorageEntries(\SplObjectStorage $splObjectStorage = NULL, array $previousObjectStorage) {
+			// remove objects detached since reconstitution
+		foreach ($previousObjectStorage as $item) {
+			if ($splObjectStorage instanceof \F3\FLOW3\Persistence\LazySplObjectStorage && !$this->persistenceSession->hasIdentifier($item['value']['identifier'])) {
+					// ingore this identifier, assume it was blocked by security query rewriting upon activation
+				continue;
+			}
+
+			$object = $this->persistenceSession->getObjectByIdentifier($item['value']['identifier']);
+			if ($splObjectStorage === NULL || !$splObjectStorage->contains($object)) {
+				if ($this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()]->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY
+						&& $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()]->isAggregateRoot() === FALSE) {
+					$this->removeEntity($object);
 				}
 			}
 		}
@@ -451,32 +561,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 *
 	 * @param string $identifier The UUID or Hash of the object
 	 * @return array
-	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectDataByIdentifier($identifier) {
-		$this->knownRecords = array();
-		return $this->_getObjectData($identifier);
+		$doc = $this->client->getDoc($identifier);
+		return $this->resultToObjectData($doc);
 	}
 
-	/**
-	 * Returns the data for the record with the given identifier, be it an entity
-	 * or value object. The data is recursively populated for the references
-	 * found, unless a lazy loading object is encountered.
-	 *
-	 * @param string $identifier The UUID or Hash of the object
-	 * @return object
-	 * @author Karsten Dambekalns <karsten@typo3.org>
-	 */
-	protected function _getObjectData($identifier) {
-		if (strlen($identifier) === 36) {
-			$statementHandle = $this->databaseHandle->prepare('SELECT "identifier", "type" AS "classname" FROM "entities" WHERE "identifier"=?');
-		} else {
-			$statementHandle = $this->databaseHandle->prepare('SELECT "identifier", "type" AS "classname" FROM "valueobjects" WHERE "identifier"=?');
-		}
-		$statementHandle->execute(array($identifier));
-		$objects = $this->processObjectRecords($statementHandle->fetchAll(\PDO::FETCH_ASSOC));
-		return current($objects);
-	}
 
 	/**
 	 * Returns the object data matching the $query.
@@ -501,12 +592,22 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$this->storeView($view);
 		$result = $this->client->getView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
 		$data = array();
-		foreach ($result->rows as $row) {
-			if ($row->value === NULL) {
-				$data[] = json_decode(json_encode($row->doc), TRUE);
+		if ($result !== NULL) {
+			foreach ($result->rows as $row) {
+				if ($row->value === NULL) {
+					$data[] = $this->resultToObjectData($row->doc);
+				}
 			}
 		}
 		return $data;
+	}
+
+	protected function resultToObjectData($result) {
+		$objectData = json_decode(json_encode($result), TRUE);
+		$objectData['metadata'] = array(
+			'CouchDB_Revision' => $objectData['_rev']
+		);
+		return $objectData;
 	}
 
 	/**
