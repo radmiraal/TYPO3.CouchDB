@@ -106,8 +106,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			}
 			$identifier = $this->persistenceSession->getIdentifierByObject($object);
 			$objectState = self::OBJECTSTATE_RECONSTITUTED;
-		} elseif ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT && property_exists($object, 'FLOW3_Persistence_ValueObject_Hash') && $this->hasValueobjectRecord($object->FLOW3_Persistence_ValueObject_Hash)) {
-			return $object->FLOW3_Persistence_ValueObject_Hash;
 		} else {
 			$this->validateObject($object);
 
@@ -148,14 +146,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function createObjectDocument($object, $objectData) {
-		$classSchema = $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()];
-		$identifier = $this->getIdentifierFromObject($object);
+		$objectData['_id'] = $objectData['identifier'];
 
-		\F3\var_dump($identifier);
-		\F3\var_dump($classSchema->getClassName());
-		\F3\var_dump($objectData);
+		$this->client->storeDoc($objectData);
 
-		return $identifier;
+		return $objectData['identifier'];
 
 	}
 
@@ -189,10 +184,21 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 				throw new \F3\FLOW3\Persistence\Exception\UnexpectedTypeException('Expected property of type ' . $propertyType . ', but got ' . gettype($propertyValue) . ' for ' . $object->FLOW3_AOP_Proxy_getProxyTargetClassName() . '::' . $propertyName, 1244465559);
 			}
 
-				// handle all objects now, because even clean ones need to be traversed
-				// as dirty checking is not recursive
 			if ($propertyValue instanceof \F3\FLOW3\AOP\ProxyInterface) {
-				if ($this->persistenceSession->isDirty($object, $propertyName)) {
+				// TODO Code for value objects is duplicate with code in persistObject
+				$classSchema = $this->classSchemata[$propertyValue->FLOW3_AOP_Proxy_getProxyTargetClassName()];
+				$propertyIdentifier = $this->getIdentifierFromObject($propertyValue);
+				if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
+					$propertyData[$propertyName] = array(
+						'type' => $propertyType,
+						'multivalue' => FALSE,
+						'value' => array(
+							'identifier' => $propertyIdentifier,
+							'classname' => $classSchema->getClassName(),
+							'properties' => $this->collectProperties($classSchema->getProperties(), $propertyValue, $propertyIdentifier)
+						)
+					);
+				} else {
 					$propertyData[$propertyName] = array(
 						'type' => $propertyType,
 						'multivalue' => FALSE,
@@ -200,10 +206,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 							'identifier' => $this->persistObject($propertyValue, $identifier)
 						)
 					);
-				} else {
-					$this->persistObject($propertyValue, $identifier);
 				}
-			} elseif ($this->persistenceSession->isDirty($object, $propertyName)) {
+			} else {
 				switch ($propertyType) {
 					case 'DateTime':
 						$propertyData[$propertyName] = array(
