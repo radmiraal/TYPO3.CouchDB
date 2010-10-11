@@ -492,23 +492,16 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * Get the CouchDB revision of an object
 	 *
 	 * @param object $object An object
+	 * @return string The current revision if it was set, NULL otherwise
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function getRevisionByObject($object) {
 		// TODO Get the revision from the object somehow
-	}
-
-	/**
-	 * Builds a query view from the given Query.
-	 *
-	 * @param \F3\FLOW3\Persistence\QueryInterface $query
-	 * @param array $parameters
-	 * @return \F3\CouchDB\ViewInterface
-	 * @author Karsten Dambekalns <karsten@typo3.org>
-	 */
-	protected function buildViewForQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
-		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
-		return $view;
+		$metadata = $this->collectMetadata($object);
+		if ($metadata !== NULL && isset($metadata['CouchDB_Revision'])) {
+			return $metadata['CouchDB_Revision'];
+		}
+		return NULL;
 	}
 
 	protected function storeView(\F3\CouchDB\ViewInterface $view) {
@@ -568,19 +561,21 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 *
 	 * @param \F3\FLOW3\Persistence\QueryInterface $query
 	 * @return array
-	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectDataByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
-		$view = $this->buildViewForQuery($query);
+		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
 		return $this->getObjectDataByView($view, array('query' => $query));
 	}
 
 	/**
 	 * "Execute" a view with the given arguments, these are view specific. The
-	 * view will be stored in CouchDB, if it is not yet defined.
+	 * view will be stored in CouchDB if it is not yet defined.
 	 *
-	 * @param ViewInterface $view
-	 * @param array $arguments
+	 * @param ViewInterface $view The view to execute
+	 * @param array $arguments An array with arguments to the view
+	 * @return array Array of object data
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, $arguments) {
 		$this->storeView($view);
@@ -600,8 +595,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * Process a CouchDB result and add metadata and process
 	 * object values by loading objects.
 	 *
-	 * @param array $result The raw result from CouchDB
+	 * @param array $result The raw document from CouchDB
 	 * @return array
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function resultToObjectData($result) {
 		$objectData = json_decode(json_encode($result), TRUE);
