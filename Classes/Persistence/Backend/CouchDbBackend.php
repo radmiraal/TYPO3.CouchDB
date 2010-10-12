@@ -49,6 +49,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected $dataSourceName;
 
 	/**
+	 * The CouchDB database to use. If it doesn't exist, it will be created.
+	 *
+	 * @var string
+	 */
+	protected $database;
+
+	/**
 	 *
 	 * @param \F3\FLOW3\Object\ObjectManagerInterface $objectManager
 	 */
@@ -57,7 +64,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Initializes the backend
+	 * Initializes the backend and connects the CouchDB client,
+	 * will be called by PersistenceManager
 	 *
 	 * @param array $options
 	 * @return void
@@ -71,7 +79,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Connect to the database
+	 * Connect to CouchDB and select the database
 	 *
 	 * @return void
 	 */
@@ -80,9 +88,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			throw new \F3\FLOW3\Persistence\Exception('The PHP extension "couchdb" must be installed and loaded in order to use the CouchDB backend.', 1283188509);
 		}
 
-		// TODO Use options
 		$this->client = new \CouchdbClient($this->dataSourceName);
-		$this->client->selectDB('my_rossmann');
+		$this->client->selectDB($this->database);
 	}
 
 	/**
@@ -92,6 +99,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param string $parentIdentifier
 	 * @return string
 	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function persistObject($object, $parentIdentifier = NULL) {
 		if (isset($this->visitedDuringPersistence[$object])) {
@@ -139,12 +147,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Get metadata from Proxy if it was set before. The metadata is used
-	 * to collect information about the current revision and is understood
-	 * by the DataMapper.
+	 * Get metadata from AOP Proxy if it was set before in the DataMapper.
 	 *
-	 * @param object $object
-	 * @return array
+	 * @param object $object The object to get the metadata for
+	 * @return array The metadata as an array
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function collectMetadata($object) {
 		$metadata = NULL;
@@ -600,7 +607,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function resultToObjectData($result) {
-		$objectData = json_decode(json_encode($result), TRUE);
+		$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($result);
 		$objectData['metadata'] = array(
 			'CouchDB_Revision' => $objectData['_rev']
 		);
