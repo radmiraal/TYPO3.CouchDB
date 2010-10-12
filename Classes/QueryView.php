@@ -54,7 +54,6 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		$this->type = $query->getType();
 		if ($constraint !== NULL) {
 			$this->emits = $this->buildEmitsForConstraint($constraint);
-			var_dump($this->emits, '$this->emits');
 		}
 		$this->name = $this->type . '_' . $this->buildNameForConstraint($constraint);
 	}
