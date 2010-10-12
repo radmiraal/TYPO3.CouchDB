@@ -56,6 +56,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected $database;
 
 	/**
+	 * @var F3\CouchDB\EntityByParentIdentifierView
+	 */
+	protected $entityByParentIdentifierView;
+
+	/**
 	 *
 	 * @param \F3\FLOW3\Object\ObjectManagerInterface $objectManager
 	 */
@@ -130,12 +135,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			'identifier' => $identifier,
 			'classname' => $classSchema->getClassName(),
 			'properties' => $this->collectProperties($classSchema->getProperties(), $object, $identifier, $dirty),
-			'metadata' => $this->collectMetadata($object)
+			'metadata' => $this->collectMetadata($object),
+			'parentIdentifier' => $parentIdentifier
 		);
 
 		if ($objectState === self::OBJECTSTATE_NEW || $dirty) {
 			$this->validateObject($object);
-			$this->storeObjectDocument($object, $objectData);
+			$this->storeObjectDocument($objectData);
 		}
 
 		if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY) {
@@ -162,21 +168,26 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Creates a document with inline properties for the given object
+	 * Creates or updates a document for the given object data. An update is
+	 * done by using the revision inside the metadata of the object.
 	 *
-	 * @param object $object The object for which to create a node
-	 * @param array $objectData
+	 * @param array $objectData The object data for the object to store
 	 * @return string The identifier of the created record
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @todo Catch exceptions for conflicts when updating the document
+	 * @todo Try to use an update handler inside CouchDB for partial updates
 	 */
-	protected function storeObjectDocument($object, $objectData) {
+	protected function storeObjectDocument($objectData) {
 		$objectData['_id'] = $objectData['identifier'];
 
 		if (isset($objectData['metadata']) && isset($objectData['metadata']['CouchDB_Revision'])) {
 			$objectData['_rev'] = $objectData['metadata']['CouchDB_Revision'];
 		}
 		unset($objectData['metadata']);
-		$this->client->storeDoc($objectData);
+
+		$this->doOperation(function($client) use (&$objectData) {
+			$client->storeDoc($objectData);
+		});
 
 		return $objectData['identifier'];
 
@@ -187,6 +198,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param array $properties The properties to collect (as per class schema)
 	 * @param object $object The object to work on
 	 * @param string $identifier The object's identifier
+	 * @param boolean $dirty A dirty flag that is passed by reference and set to TRUE if a dirty property was found
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -212,7 +224,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			} elseif ($propertyValue !== NULL && $propertyType !== $this->getType($propertyValue)) {
 				throw new \F3\FLOW3\Persistence\Exception\UnexpectedTypeException('Expected property of type ' . $propertyType . ', but got ' . gettype($propertyValue) . ' for ' . $object->FLOW3_AOP_Proxy_getProxyTargetClassName() . '::' . $propertyName, 1244465559);
 			}
-
 
 			if ($this->persistenceSession->isDirty($object, $propertyName)) {
 				$dirty = TRUE;
@@ -283,10 +294,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * Creates a unix timestamp from the given DateTime object. If NULL is given
 	 * NULL will be returned.
 	 *
-	 * TODO return JavaScript Date parseavle Format (e.g. "2008/06/09 13:52:11 +0000") 
-	 *
 	 * @param \DateTime $dateTime
 	 * @return integer
+	 * @todo Return a JavaScript Date parseable Format (e.g. "2008/06/09 13:52:11 +0000")
 	 */
 	protected function processDateTime(\DateTime $dateTime = NULL) {
 		if ($dateTime instanceof \DateTime) {
@@ -309,7 +319,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function processArray(array $array = NULL, $parentIdentifier, array $previousArray = NULL) {
+	protected function processArray(array $array, $parentIdentifier, array $previousArray = NULL) {
 		if ($previousArray !== NULL) {
 			$this->removeDeletedArrayEntries($array, $previousArray['value']);
 		}
@@ -412,7 +422,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return array An array with "flat" values representing the SplObjectStorage
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	protected function processSplObjectStorage(\SplObjectStorage $splObjectStorage = NULL, $parentIdentifier, array $previousObjectStorage = NULL) {
+	protected function processSplObjectStorage(\SplObjectStorage $splObjectStorage, $parentIdentifier, array $previousObjectStorage = NULL) {
 		if ($previousObjectStorage !== NULL && $previousObjectStorage['value'] !== NULL) {
 			$this->removeDeletedSplObjectStorageEntries($splObjectStorage, $previousObjectStorage['value']);
 		}
@@ -458,7 +468,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return void
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	protected function removeDeletedSplObjectStorageEntries(\SplObjectStorage $splObjectStorage = NULL, array $previousObjectStorage) {
+	protected function removeDeletedSplObjectStorageEntries(\SplObjectStorage $splObjectStorage, array $previousObjectStorage) {
 			// remove objects detached since reconstitution
 		foreach ($previousObjectStorage as $item) {
 			if ($splObjectStorage instanceof \F3\FLOW3\Persistence\LazySplObjectStorage && !$this->persistenceSession->hasIdentifier($item['value']['identifier'])) {
@@ -477,7 +487,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Removes an entity (TODO remove all entities contained within it's boundary)
+	 * Removes an entity
 	 *
 	 * @param object $object An object
 	 * @return void
@@ -485,14 +495,38 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function removeEntity($object) {
-		// TODO $this->removeEntitiesByParent($object);
-
 		$identifier = $this->persistenceSession->getIdentifierByObject($object);
 		$revision = $this->getRevisionByObject($object);
+		
+		$this->removeEntitiesByParent($identifier);
 
-		$this->client->deleteDoc($identifier, $revision);
+		$this->doOperation(function($client) use ($identifier, $revision) {
+			return $client->deleteDoc($identifier, $revision);
+		});
 
 		$this->emitRemovedObject($object);
+	}
+
+	/**
+	 * Remove all non-aggregate-root objects that have the given identifier set
+	 * as their parentIdentifier inside the CouchDB document.
+	 *
+	 * @param string $identifier The identifier of the parent object
+	 * @return void
+	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function removeEntitiesByParent($identifier) {
+		$result = $this->getView($this->getEntityByParentIdentifierView(), array('parentIdentifier' => $identifier));
+		if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
+			foreach ($result->rows as $row) {
+				$object = $this->persistenceSession->getObjectByIdentifier($row->id);
+				if ($this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()]->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY
+						&& $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()]->isAggregateRoot() === FALSE) {
+					$this->removeEntity($object);
+				}
+			};
+		}
 	}
 
 	/**
@@ -503,7 +537,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function getRevisionByObject($object) {
-		// TODO Get the revision from the object somehow
 		$metadata = $this->collectMetadata($object);
 		if ($metadata !== NULL && isset($metadata['CouchDB_Revision'])) {
 			return $metadata['CouchDB_Revision'];
@@ -511,18 +544,26 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		return NULL;
 	}
 
+	/**
+	 * Store a view inside CouchDB if it is not yet defined
+	 *
+	 * @param \F3\CouchDB\ViewInterface $view
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @todo Cache Design document and only store view if it's not yet defined or changed
+	 */
 	protected function storeView(\F3\CouchDB\ViewInterface $view) {
-		// TODO Cache Design document
-		// TODO Cache Query!!!
 		try {
-			$design = $this->client->getDoc('_design/' . $view->getDesignName());
+			$design = $this->doOperation(function($client) use ($view) {
+				return $client->getDoc('_design/' . $view->getDesignName());
+			});
 
 			if (isset($design->views->{$view->getViewName()})) {
 				return;
 			}
 		} catch(\CouchdbClientException $e) {
 			$message = json_decode($e->getMessage(), TRUE);
-			if ($message['error'] === 'not_found') {
+			if ($message['error'] === 'not_found' && $message['reason'] === 'missing') {
 				$design = new \stdClass();
 				$design->_id = '_design/' . $view->getDesignName();
 				$design->views = new \stdClass();
@@ -535,7 +576,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			$design->views->{$view->getViewName()}->map = $view->getReduceFunctionSource();
 		}
 
-		$this->client->storeDoc($design);
+		$this->doOperation(function($client) use ($design) {
+			$client->storeDoc($design);
+		});
 	}
 
 	/**
@@ -556,9 +599,15 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param string $identifier The UUID or Hash of the object
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @todo Maybe introduce a ObjectNotFound exception?
 	 */
 	public function getObjectDataByIdentifier($identifier) {
-		$doc = $this->client->getDoc($identifier);
+		$doc = $this->doOperation(function($client) use ($identifier) {
+			return $client->getDoc($identifier);
+		});
+		if ($doc === NULL) {
+			throw new \F3\FLOW3\Persistence\Exception\UnknownObjectException('Unknown object with identifier ' . $identifier, 1286902479);
+		}
 		return $this->resultToObjectData($doc);
 	}
 
@@ -576,26 +625,39 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * "Execute" a view with the given arguments, these are view specific. The
-	 * view will be stored in CouchDB if it is not yet defined.
+	 * Get view results and convert documents to object data. The view can
+	 * either emit the full object data document as the value or use
+	 * the query option "include_docs=true".
 	 *
-	 * @param ViewInterface $view The view to execute
+	 * @param \F3\CouchDB\ViewInterface $view The view to execute
 	 * @param array $arguments An array with arguments to the view
 	 * @return array Array of object data
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, $arguments) {
-		$this->storeView($view);
-		$result = $this->client->getView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
+		$result = $this->getView($view, $arguments);
 		$data = array();
 		if ($result !== NULL) {
 			foreach ($result->rows as $row) {
-				if ($row->value === NULL) {
-					$data[] = $this->resultToObjectData($row->doc);
-				}
+				$data[] = $this->resultToObjectData($row->value !== NULL ? $row->value : $row->doc);
 			}
 		}
 		return $data;
+	}
+
+	/**
+	 * "Execute" a view with the given arguments, these are view specific. The
+	 * view will be stored in CouchDB if it is not yet defined.
+	 *
+	 * @param ViewInterface $view
+	 * @param array $arguments
+	 * @return array The results of the view
+	 */
+	public function getView(\F3\CouchDB\ViewInterface $view, $arguments) {
+		$this->storeView($view);
+		return $this->doOperation(function($client) use ($view, &$arguments) {
+			return $client->getView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
+		});
 	}
 
 	/**
@@ -605,6 +667,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param array $result The raw document from CouchDB
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @todo Remember identifiers and paths to fetch and get all documents in one call
 	 */
 	protected function resultToObjectData($result) {
 		$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($result);
@@ -630,6 +693,30 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
+	 * Do a CouchDB operation and handle error conversion and creation of
+	 * the database on the fly.
+	 *
+	 * @param function $couchDbOperation
+	 * @return mixed
+	 */
+	protected function doOperation($couchDbOperation) {
+		try {
+			return $couchDbOperation($this->client);
+		} catch(\CouchdbClientException $e) {
+			$message = json_decode($e->getMessage(), TRUE);
+			if ($message['error'] === 'not_found' && $message['reason'] === 'no_db_file') {
+				if ($this->client->createDatabase($this->database)) {
+					return $this->doOperation($couchDbOperation);
+				} else {
+					throw new \F3\FLOW3\Persistence\Exception('Could not create database ' . $this->database, 1286901880);
+				}
+			} else {
+				throw $e;
+			}
+		}
+	}
+
+	/**
 	 * Returns the type name as used in the database table names.
 	 *
 	 * @param string $type
@@ -642,6 +729,16 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		} else {
 			return strtolower($type);
 		}
+	}
+
+	/**
+	 * @return \F3\CouchDB\EntityByParentIdentifierView
+	 */
+	public function getEntityByParentIdentifierView() {
+		if ($this->entityByParentIdentifierView === NULL) {
+			$this->entityByParentIdentifierView = $this->objectManager->create('F3\CouchDB\EntityByParentIdentifierView');
+		}
+		return $this->entityByParentIdentifierView;
 	}
 
 	/**

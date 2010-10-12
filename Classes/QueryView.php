@@ -55,7 +55,8 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		if ($constraint !== NULL) {
 			$this->emits = $this->buildEmitsForConstraint($constraint);
 		}
-		$this->name = $this->type . '_' . $this->buildNameForConstraint($constraint);
+		$constraintName = $this->buildNameForConstraint($constraint);
+		$this->name = $this->type . (($constraintName !== '') ? '_' . $constraintName : '');
 	}
 
 	/**
@@ -103,6 +104,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
 			return 'and<' . $this->buildNameForConstraint($constraint->getConstraint1()) . ',' . $this->buildNameForConstraint($constraint->getConstraint2()) . '>';
 		}
+		return '';
 	}
 
 	/**
