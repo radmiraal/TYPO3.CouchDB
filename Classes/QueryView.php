@@ -160,6 +160,13 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 				'include_docs' => 'true'
 			);
 
+			if ($query->getLimit() !== NULL) {
+				$parameters['limit'] = $query->getLimit();
+			}
+			if ($query->getOffset() !== NULL) {
+				$parameters['skip'] = $query->getOffset();
+			}
+
 			$constraint = $query->getConstraint();
 			if ($constraint !== NULL) {
 				$key = $this->buildKeyForConstraint($constraint);
@@ -211,7 +218,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	 * @return string The function source code or null if no map function defined
 	 */
 	public function getReduceFunctionSource() {
-		return NULL;
+		return '_count';
 	}
 }
 
