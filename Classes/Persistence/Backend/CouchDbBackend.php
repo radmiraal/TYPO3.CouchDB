@@ -61,7 +61,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected $entityByParentIdentifierView;
 
 	/**
-	 *
 	 * @param \F3\FLOW3\Object\ObjectManagerInterface $objectManager
 	 */
 	public function injectObjectManager(\F3\FLOW3\Object\ObjectManagerInterface $objectManager) {
@@ -175,7 +174,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return string The identifier of the created record
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @todo Catch exceptions for conflicts when updating the document
-	 * @todo Try to use an update handler inside CouchDB for partial updates
+	 * @todo (Later) Try to use an update handler inside CouchDB for partial updates
 	 */
 	protected function storeObjectDocument($objectData) {
 		$objectData['_id'] = $objectData['identifier'];
@@ -573,7 +572,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$design->views->{$view->getViewName()} = new \stdClass();
 		$design->views->{$view->getViewName()}->map = $view->getMapFunctionSource();
 		if ($view->getReduceFunctionSource() !== NULL) {
-			$design->views->{$view->getViewName()}->map = $view->getReduceFunctionSource();
+			$design->views->{$view->getViewName()}->reduce = $view->getReduceFunctionSource();
 		}
 
 		$this->doOperation(function($client) use ($design) {
@@ -586,11 +585,16 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 *
 	 * @param \F3\FLOW3\Persistence\QueryInterface $query
 	 * @return integer
-	 * @author Karsten Dambekalns <karsten@typo3.org>
-	 * @todo optimize so properties are ignored and the db is asked for the count only
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectCountByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
-		return count($this->getObjectDataByQuery($query));
+		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
+		$result = $this->getView($view, array('query' => $query, 'count' => TRUE));
+		if (is_array($result->rows) && count($result->rows) === 1) {
+			return $result->rows[0]->value;
+		} else {
+			throw new \Exception('Could not get count', 1287074016);
+		}
 	}
 
 	/**

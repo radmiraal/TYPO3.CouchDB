@@ -156,9 +156,16 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		if (isset($arguments['query']) && $arguments['query'] instanceof \F3\FLOW3\Persistence\QueryInterface) {
 			$query = $arguments['query'];
 
-			$parameters = array(
-				'include_docs' => 'true'
-			);
+			if (isset($arguments['count']) && $arguments['count'] === TRUE) {
+				$parameters = array(
+					'reduce' => 'true'
+				);
+			} else {
+				$parameters = array(
+					'reduce' => 'false',
+					'include_docs' => 'true'
+				);
+			}
 
 			if ($query->getLimit() !== NULL) {
 				$parameters['limit'] = $query->getLimit();
