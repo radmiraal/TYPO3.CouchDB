@@ -550,6 +550,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @todo Cache Design document and only store view if it's not yet defined or changed
+	 * @todo getDoc('_design/...') should not escape design name, causes redirect in CouchDB
 	 */
 	protected function storeView(\F3\CouchDB\ViewInterface $view) {
 		try {
@@ -590,8 +591,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	public function getObjectCountByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
 		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
 		$result = $this->getView($view, array('query' => $query, 'count' => TRUE));
-		if (is_array($result->rows) && count($result->rows) === 1) {
-			return $result->rows[0]->value;
+		if (is_array($result->rows)) {
+			return (count($result->rows) === 1) ? $result->rows[0]->value : 0;
 		} else {
 			throw new \Exception('Could not get count', 1287074016);
 		}
