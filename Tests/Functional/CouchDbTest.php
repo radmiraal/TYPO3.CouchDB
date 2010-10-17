@@ -1,23 +1,9 @@
 <?php
 namespace F3\CouchDB\Testing;
 
-require_once(__DIR__ . '/../../../../Framework/FLOW3/Classes/Core/Bootstrap.php');
+require_once(__DIR__ . '/BaseFunctionalTestCase.php');
 
-class CouchDbTest extends \PHPUnit_Framework_TestCase {
-	/**
-	 *
-	 * @var \F3\FLOW3\Object\ObjectManagerInterface
-	 */
-	protected static $objectManager;
-
-	public static function setUpBeforeClass() {
-		define('FLOW3_PATH_ROOT', __DIR__ . '/../../../../../');
-		$_SERVER['FLOW3_WEBPATH'] = __DIR__ . '/../../../../../Web/';
-		\F3\FLOW3\Core\Bootstrap::defineConstants();
-		$flow3 = new \F3\FLOW3\Core\Bootstrap('Testing');
-		$flow3->initialize();
-		self::$objectManager = $flow3->getObjectManager();
-	}
+class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 
 	/**
 	 *
@@ -32,13 +18,6 @@ class CouchDbTest extends \PHPUnit_Framework_TestCase {
 	protected function resetPersistenceBackend() {
 		$backend = $this->getObjectManager()->get('F3\FLOW3\Persistence\Backend\BackendInterface');
 		$backend->resetStorage();
-	}
-
-	/**
-	 * @return \F3\FLOW3\Object\ObjectManagerInterface
-	 */
-	protected function getObjectManager() {
-		return self::$objectManager;
 	}
 
 	/**
