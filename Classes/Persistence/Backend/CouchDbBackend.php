@@ -30,7 +30,7 @@ namespace F3\CouchDB\Persistence\Backend;
 class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 
 	/**
-	 * @var \CouchdbClient
+	 * @var \F3\CouchDB\Client
 	 */
 	protected $client;
 
@@ -88,12 +88,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return void
 	 */
 	protected function connect() {
-		if (!extension_loaded("couchdb")) {
-			throw new \F3\FLOW3\Persistence\Exception('The PHP extension "couchdb" must be installed and loaded in order to use the CouchDB backend.', 1283188509);
-		}
-
-		$this->client = new \CouchdbClient($this->dataSourceName);
-		$this->client->selectDB($this->database);
+		$this->client = $this->objectManager->create('F3\CouchDB\Client', $dataSourceName);
+		$this->client->setDatabase($this->database);
 	}
 
 	/**
@@ -707,9 +703,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected function doOperation($couchDbOperation) {
 		try {
 			return $couchDbOperation($this->client);
-		} catch(\CouchdbClientException $e) {
-			$message = json_decode($e->getMessage(), TRUE);
-			if ($message['error'] === 'not_found' && $message['reason'] === 'no_db_file') {
+		} catch(\F3\CouchDB\Client\ClientException $e) {
+			$information = $e->getInformation();
+			if ($information['error'] === 'not_found' && $information['reason'] === 'no_db_file') {
 				if ($this->client->createDatabase($this->database)) {
 					return $this->doOperation($couchDbOperation);
 				} else {
