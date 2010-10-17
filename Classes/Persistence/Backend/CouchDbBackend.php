@@ -722,6 +722,29 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
+	 * Delete the database with all documents, it will be recreated on
+	 * next access.
+	 *
+	 * @return void
+	 */
+	public function resetStorage() {
+		$databaseName = $this->database;
+		try {
+			$this->doOperation(function($client) use ($databaseName) {
+				$client->deleteDatabase($databaseName);
+			});
+		} catch(\CouchdbClientException $e) {
+		}
+		try {
+			$this->doOperation(function($client) use ($databaseName) {
+				$client->createDatabase($databaseName);
+				$client->selectDB($databaseName);
+			});
+		} catch(\CouchdbClientException $e) {
+		}
+	}
+
+	/**
 	 * Returns the type name as used in the database table names.
 	 *
 	 * @param string $type
