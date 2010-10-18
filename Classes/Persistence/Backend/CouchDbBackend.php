@@ -88,7 +88,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return void
 	 */
 	protected function connect() {
-		$this->client = $this->objectManager->create('F3\CouchDB\Client', $dataSourceName);
+		$this->client = $this->objectManager->create('F3\CouchDB\Client', $this->dataSourceName);
 		$this->client->setDatabase($this->database);
 	}
 
@@ -181,7 +181,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		unset($objectData['metadata']);
 
 		$this->doOperation(function($client) use (&$objectData) {
-			$client->storeDoc($objectData);
+			$client->createDocument($objectData);
 		});
 
 		return $objectData['identifier'];
@@ -496,7 +496,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$this->removeEntitiesByParent($identifier);
 
 		$this->doOperation(function($client) use ($identifier, $revision) {
-			return $client->deleteDoc($identifier, $revision);
+			return $client->deleteDocument($identifier, $revision);
 		});
 
 		$this->emitRemovedObject($object);
@@ -551,15 +551,15 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected function storeView(\F3\CouchDB\ViewInterface $view) {
 		try {
 			$design = $this->doOperation(function($client) use ($view) {
-				return $client->getDoc('_design/' . $view->getDesignName());
+				return $client->getDocument('_design/' . $view->getDesignName());
 			});
 
 			if (isset($design->views->{$view->getViewName()})) {
 				return;
 			}
-		} catch(\CouchdbClientException $e) {
-			$message = json_decode($e->getMessage(), TRUE);
-			if ($message['error'] === 'not_found' && $message['reason'] === 'missing') {
+		} catch(\F3\CouchDB\Client\ClientException $e) {
+			$information = $e->getInformation();
+			if ($information['error'] === 'not_found' && $information['reason'] === 'missing') {
 				$design = new \stdClass();
 				$design->_id = '_design/' . $view->getDesignName();
 				$design->views = new \stdClass();
@@ -573,7 +573,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		}
 
 		$this->doOperation(function($client) use ($design) {
-			$client->storeDoc($design);
+			if (isset($design->_rev)) {
+				$client->updateDocument($design->_id, $design);
+			} else {
+				$client->createDocument($design);
+			}
 		});
 	}
 
@@ -604,7 +608,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function getObjectDataByIdentifier($identifier) {
 		$doc = $this->doOperation(function($client) use ($identifier) {
-			return $client->getDoc($identifier);
+			return $client->getDocument($identifier);
 		});
 		if ($doc === NULL) {
 			throw new \F3\FLOW3\Persistence\Exception\UnknownObjectException('Unknown object with identifier ' . $identifier, 1286902479);
@@ -657,7 +661,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	public function getView(\F3\CouchDB\ViewInterface $view, $arguments) {
 		$this->storeView($view);
 		return $this->doOperation(function($client) use ($view, &$arguments) {
-			return $client->getView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
+			return $client->queryView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
 		});
 	}
 
@@ -734,7 +738,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		try {
 			$this->doOperation(function($client) use ($databaseName) {
 				$client->createDatabase($databaseName);
-				$client->selectDB($databaseName);
+				$client->setDatabase($databaseName);
 			});
 		} catch(\CouchdbClientException $e) {
 		}

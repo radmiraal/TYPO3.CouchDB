@@ -61,7 +61,7 @@ class EntityByParentIdentifierView implements \F3\CouchDB\ViewInterface {
 			$parentIdentifier = $arguments['parentIdentifier'];
 
 			$parameters = array(
-				'key' => json_encode($parentIdentifier)
+				'key' => $parentIdentifier
 			);
 			return $parameters;
 		} else {

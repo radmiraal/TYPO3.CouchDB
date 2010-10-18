@@ -61,6 +61,20 @@ class ClientTest extends \F3\Testing\BaseTestCase {
 	/**
 	 * @test
 	 */
+	public function createDocumentWithIdInDocumentWorks() {
+		$response = $this->client->createDocument(array(
+			'_id' => 'bar',
+			'name' => 'Bar'
+		));
+		$this->assertTrue($response->isSuccess());
+
+		$response = $this->client->getDocument('bar');
+		$this->assertEquals('Bar', $response->name);
+	}
+
+	/**
+	 * @test
+	 */
 	public function updateDocumentWorks() {
 		$response = $this->client->createDocument('abc', array(
 			'name' => 'Foo'

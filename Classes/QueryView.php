@@ -158,12 +158,12 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 			if (isset($arguments['count']) && $arguments['count'] === TRUE) {
 				$parameters = array(
-					'reduce' => 'true'
+					'reduce' => TRUE
 				);
 			} else {
 				$parameters = array(
-					'reduce' => 'false',
-					'include_docs' => 'true'
+					'reduce' => FALSE,
+					'include_docs' => TRUE
 				);
 			}
 
@@ -177,7 +177,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 			$constraint = $query->getConstraint();
 			if ($constraint !== NULL) {
 				$key = $this->buildKeyForConstraint($constraint);
-				$parameters['key'] = json_encode($key);
+				$parameters['key'] = $key;
 			}
 
 			return $parameters;
