@@ -35,6 +35,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected $client;
 
 	/**
+	 * @inject
 	 * @var \F3\FLOW3\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
@@ -42,7 +43,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	/**
 	 * The URL of the CouchDB server. Valid URLs could be:
 	 * - http://127.0.0.1:5984
-	 * - http://user:pass@127.0.0.1:5984 
+	 * - http://user:pass@127.0.0.1:5984
 	 *
 	 * @var string
 	 */
@@ -59,13 +60,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @var F3\CouchDB\EntityByParentIdentifierView
 	 */
 	protected $entityByParentIdentifierView;
-
-	/**
-	 * @param \F3\FLOW3\Object\ObjectManagerInterface $objectManager
-	 */
-	public function injectObjectManager(\F3\FLOW3\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
 
 	/**
 	 * Initializes the backend and connects the CouchDB client,
@@ -89,7 +83,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	protected function connect() {
 		$this->client = $this->objectManager->create('F3\CouchDB\Client', $this->dataSourceName);
-		$this->client->setDatabase($this->database);
+		$this->client->setDatabaseName($this->database);
 	}
 
 	/**
@@ -492,7 +486,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected function removeEntity($object) {
 		$identifier = $this->persistenceSession->getIdentifierByObject($object);
 		$revision = $this->getRevisionByObject($object);
-		
+
 		$this->removeEntitiesByParent($identifier);
 
 		$this->doOperation(function($client) use ($identifier, $revision) {
@@ -574,7 +568,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 
 		$this->doOperation(function($client) use ($design) {
 			if (isset($design->_rev)) {
-				$client->updateDocument($design->_id, $design);
+				$client->updateDocument($design, $design->_id);
 			} else {
 				$client->createDocument($design);
 			}
@@ -701,10 +695,10 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * Do a CouchDB operation and handle error conversion and creation of
 	 * the database on the fly.
 	 *
-	 * @param function $couchDbOperation
+	 * @param \Closure $couchDbOperation
 	 * @return mixed
 	 */
-	protected function doOperation($couchDbOperation) {
+	protected function doOperation(\Closure $couchDbOperation) {
 		try {
 			return $couchDbOperation($this->client);
 		} catch(\F3\CouchDB\Client\ClientException $e) {
@@ -729,19 +723,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function resetStorage() {
 		$databaseName = $this->database;
-		try {
-			$this->doOperation(function($client) use ($databaseName) {
+		$this->doOperation(function($client) use ($databaseName) {
+			if ($client->databaseExists($databaseName)) {
 				$client->deleteDatabase($databaseName);
-			});
-		} catch(\CouchdbClientException $e) {
-		}
-		try {
-			$this->doOperation(function($client) use ($databaseName) {
-				$client->createDatabase($databaseName);
-				$client->setDatabase($databaseName);
-			});
-		} catch(\CouchdbClientException $e) {
-		}
+			}
+			$client->createDatabase($databaseName);
+			$client->setDatabaseName($databaseName);
+		});
 	}
 
 	/**
@@ -771,6 +759,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 
 	/**
 	 * @param string $dataSourceName
+	 * @return void
 	 */
 	public function setDataSourceName($dataSourceName) {
 		$this->dataSourceName = $dataSourceName;
@@ -778,6 +767,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 
 	/**
 	 * @param string $database
+	 * @return void
 	 */
 	public function setDatabase($database) {
 		$this->database = $database;

@@ -30,6 +30,7 @@ namespace F3\CouchDB\Client;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
 class RawResponse {
+
 	/**
 	 * @var string
 	 */
@@ -40,15 +41,25 @@ class RawResponse {
 	 */
 	protected $data;
 
-	public function __construct($headers, $body) {
+	/**
+	 * @param array $headers
+	 * @param string $body
+	 */
+	public function __construct(array $headers, $body) {
 		$this->contentType = $headers['content-type'];
 		$this->data = $body;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getContentType() {
 		return $this->contentType;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function getData() {
 		return $this->data;
 	}

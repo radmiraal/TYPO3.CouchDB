@@ -28,9 +28,12 @@ namespace F3\CouchDB\Client;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
 class ConflictException extends \F3\CouchDB\Client\ClientException {
-	protected $code = 1287395905;
 
+	/**
+	 * @var string
+	 */
 	protected $message = 'CouchDB conflict';
+
 }
 
 ?>

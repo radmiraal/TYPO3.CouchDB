@@ -30,27 +30,43 @@ namespace F3\CouchDB\Client;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
 class StatusResponse {
+
 	/**
 	 * @var array
 	 */
 	protected $data;
 
+	/**
+	 * @param string $body JSON-encoded data
+	 */
 	public function __construct($body) {
 		$this->data = json_decode($body, TRUE);
 	}
 
+	/**
+	 * @return array|mixed
+	 */
 	public function getData() {
 		return $this->data;
 	}
 
+	/**
+	 * @return bool
+	 */
 	public function isSuccess() {
 		return isset($this->data['ok']) && $this->data['ok'] === TRUE;
 	}
 
+	/**
+	 * @return string|mixed
+	 */
 	public function getId() {
 		return isset($this->data['id']) ? $this->data['id'] : NULL;
 	}
 
+	/**
+	 * @return string|mixed
+	 */
 	public function getRevision() {
 		return isset($this->data['rev']) ? $this->data['rev'] : NULL;
 	}

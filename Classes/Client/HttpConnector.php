@@ -28,8 +28,10 @@ namespace F3\CouchDB\Client;
  * Some code borrowed from phpillow project.
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope prototype
  */
 class HttpConnector {
+
 	/**
 	 * CouchDB connection options
 	 *
@@ -58,29 +60,31 @@ class HttpConnector {
 		'PUT' => TRUE
 	);
 
+	/**
+	 * @var array
+	 */
 	protected $unencodedQueryParameters = array(
 		'rev' => TRUE
 	);
 
 	/**
-	 * Construct a couch DB connection
+	 * Connection pointer for connections
 	 *
+	 * @var resource
+	 */
+	protected $connection;
+
+	/**
 	 * Construct a couch DB connection from basic connection parameters for one
 	 * given database.
 	 *
-	 * In most cases you want to use the createInstance() method to register
-	 * the connection instance, so it can be used by the document and view
-	 * classes. If you want to operate directly on a raw connection you may
-	 * also instantiate it directly, though.
-	 *
 	 * @param string $host
-	 * @param int $port
+	 * @param integer $port
 	 * @param string $username
 	 * @param string $password
 	 * @param array $options
-	 * @return \F3\CouchDB\Client\HttpConnector
 	 */
-	public function __construct($host, $port, $username = NULL, $password = NULL, $options = array()) {
+	public function __construct($host, $port = 5984, $username = NULL, $password = NULL, array $options = array()) {
 		$this->options['host'] = (string)$host;
 		$this->options['port'] = (int)$port;
 		$this->options['username'] = $username;
@@ -89,8 +93,12 @@ class HttpConnector {
 		$this->options = \F3\FLOW3\Utility\Arrays::arrayMergeRecursiveOverrule($this->options, $options, TRUE);
 	}
 
-	public function  __destruct() {
-		@fclose($this->connection);
+	/**
+	 */
+	public function  shutdownObject() {
+		if (is_resource($this->connection)) {
+			fclose($this->connection);
+		}
 		$this->connection = NULL;
 	}
 
@@ -114,10 +122,10 @@ class HttpConnector {
 	 * @param array $params
 	 * @return mixed An object if the response is decoded or the response as a string if raw === TRUE
 	 */
-	public function __call($method, $params) {
+	public function __call($method, array $params) {
 		$method = strtoupper($method);
 		if (!isset($this->allowedMethods[$method])) {
-			throw new \Exception('Unsupported request method: ' . $method, 1287339276);
+			throw new \RuntimeException('Unsupported request method: ' . $method, 1287339276);
 		}
 
 		$path = $params[0];
@@ -129,13 +137,6 @@ class HttpConnector {
 	}
 
 	/**
-	 * Connection pointer for connections
-	 *
-	 * @var resource
-	 */
-	protected $connection;
-
-	/**
 	 * Check for server connection
 	 *
 	 * Checks if the connection already has been established, or tries to
@@ -144,12 +145,12 @@ class HttpConnector {
 	 * @return void
 	 */
 	protected function checkConnection() {
-		// If the connection could not be established, fsockopen sadly does not
-		// only return false (as documented), but also always issues a warning.
-		if (($this->connection === NULL) &&
-			(($this->connection = @fsockopen($this->options['host'], $this->options['port'], $errno, $errstr)) === FALSE)) {
+			// If the connection could not be established, fsockopen sadly does not
+			// only return false (as documented), but also always issues a warning.
+		if (($this->connection === NULL)
+				&& (($this->connection = fsockopen($this->options['host'], $this->options['port'], $errno, $errstr)) === FALSE)) {
 			$this->connection = NULL;
-			throw new \Exception('Could not connect to server at ' . $this->options['ip'] . ':' . $this->options['port'] . ' ' . $errno . ': "' . $errstr . '"', 1287339586);
+			throw new \RuntimeException('Could not connect to server at ' . $this->options['ip'] . ':' . $this->options['port'] . ' ' . $errno . ': "' . $errstr . '"', 1287339586);
 		}
 	}
 
@@ -179,25 +180,25 @@ class HttpConnector {
 			$path .= http_build_query($query);
 		}
 
-		// Create basic request headers
+			// Create basic request headers
 		$request = $method . ' ' . $path . " HTTP/1.1\r\n";
 		$request .= "Host: " . $this->options['host'] . ":" . $this->options['port'] . "\r\n";
 
-		// Add basic auth if set
+			// Add basic auth if set
 		if ($this->options['username']) {
 			$request .= sprintf("Authorization: Basic %s\r\n",
 				base64_encode($this->options['username'] . ':' . $this->options['password'])
 			);
 		}
 
-		// Set keep-alive header, which helps to keep to connection
-		// initilization costs low, especially when the database server is not
-		// available in the locale net.
+			// Set keep-alive header, which helps to keep to connection
+			// initilization costs low, especially when the database server is not
+			// available in the locale net.
 		$request .= 'Connection: ' . ($this->options['keep-alive'] ? 'Keep-Alive' : 'Close') . "\r\n";
 
-		// Also add headers and request body if data should be sent to the
-		// server. Otherwise just add the closing mark for the header section
-		// of the request.
+			// Also add headers and request body if data should be sent to the
+			// server. Otherwise just add the closing mark for the header section
+			// of the request.
 		if ($data !== NULL) {
 			$request .= "Content-type: application/json\r\n";
 			$request .= "Content-Length: " . strlen($data) . "\r\n\r\n";
@@ -221,47 +222,47 @@ class HttpConnector {
 	 * @param string $path
 	 * @param array $query
 	 * @param string $data
-	 * @param bool $raw
-	 * @param int $reconnectAttempt
+	 * @param boolean $raw
+	 * @param integer $reconnectAttempt
 	 * @return mixed
 	 */
-	protected function request($method, $path, $query = NULL, $data = NULL, $raw = FALSE, $reconnectAttempt = 0) {
+	protected function request($method, $path, array $query = NULL, $data = NULL, $raw = FALSE, $reconnectAttempt = 0) {
 		if ($reconnectAttempt > $this->options['retry']) {
-			throw new \Exception('Too many connection retries', 1287341261);
+			throw new \RuntimeException('Too many connection retries', 1287341261);
 		}
 
 		$this->checkConnection();
 
 		$request = $this->buildRequest($method, $path, $query, $data);
 		if (fwrite($this->connection, $request) === FALSE) {
-			@fclose($this->connection);
+			fclose($this->connection);
 			$this->connection = NULL;
 			return $this->request($method, $path, $data, $raw, $reconnectAttempt + 1);
 		}
 
-		// Read server response headers
+			// Read server response headers
 		$rawHeaders = '';
 		$headers = array(
 			'connection' => ($this->options['keep-alive'] ? 'Keep-Alive' : 'Close'),
 		);
 
-		// Remove leading newlines, should not accur at all, actually.
+			// Remove leading newlines, should not accur at all, actually.
 		while (($line = fgets($this->connection)) !== FALSE && ($lineContent = rtrim($line)) === '');
 
-		// Thow exception, if connection has been aborted by the server, and
-		// leave handling to the user for now.
+			// Thow exception, if connection has been aborted by the server, and
+			// leave handling to the user for now.
 		if ($line === FALSE) {
-			// Reestablish which seems to have been aborted
-			//
-			// An aborted connection seems to happen here on long running
-			// requests, which cause a connection timeout at server side.
-			@fclose($this->connection);
+				// Reestablish which seems to have been aborted
+				//
+				// An aborted connection seems to happen here on long running
+				// requests, which cause a connection timeout at server side.
+			fclose($this->connection);
 			$this->connection = NULL;
 			return $this->request($method, $path, $data, $raw, $reconnectAttempt + 1);
 		}
 
 		do {
-			// Also store raw headers for later logging
+				// Also store raw headers for later logging
 			$rawHeaders .= $lineContent . "\n";
 
 			// Extract header values
@@ -274,33 +275,33 @@ class HttpConnector {
 			}
 		} while ((($line = fgets( $this->connection)) !== FALSE) && (($lineContent = rtrim($line)) !== ''));
 
-		// Read response body
+			// Read response body
 		$body = '';
 		if (!isset($headers['transfer-encoding']) || ($headers['transfer-encoding'] !== 'chunked')) {
-			// HTTP 1.1 supports chunked transfer encoding, if the according
-			// header is not set, just read the specified amount of bytes.
+				// HTTP 1.1 supports chunked transfer encoding, if the according
+				// header is not set, just read the specified amount of bytes.
 			$bytesToRead = (int)(isset($headers['content-length']) ? $headers['content-length'] : 0);
 
-			// Read body only as specified by chunk sizes, everything else
-			// are just footnotes, which are not relevant for us.
+				// Read body only as specified by chunk sizes, everything else
+				// are just footnotes, which are not relevant for us.
 			while ($bytesToRead > 0) {
 				$body .= $read = fgets($this->connection, $bytesToRead + 1);
 				$bytesToRead -= strlen($read);
 			}
 		} else {
-			// When transfer-encoding=chunked has been specified in the
-			// response headers, read all chunks and sum them up to the body,
-			// until the server has finished. Ignore all additional HTTP
-			// options after that.
+				// When transfer-encoding=chunked has been specified in the
+				// response headers, read all chunks and sum them up to the body,
+				// until the server has finished. Ignore all additional HTTP
+				// options after that.
 			do {
 				$line = rtrim(fgets($this->connection));
 
-				// Get bytes to read, with option appending comment
+					// Get bytes to read, with option appending comment
 				if (preg_match('(^([0-9a-f]+)(?:;.*)?$)', $line, $match)) {
 					$bytesToRead = hexdec($match[1]);
 
-					// Read body only as specified by chunk sizes, everything else
-					// are just footnotes, which are not relevant for us.
+						// Read body only as specified by chunk sizes, everything else
+						// are just footnotes, which are not relevant for us.
 					$bytesLeft = $bytesToRead;
 					while ($bytesLeft > 0) {
 						$body .= $read = fread( $this->connection, $bytesLeft + 2 );
@@ -309,17 +310,17 @@ class HttpConnector {
 				}
 			} while ($bytesToRead > 0);
 
-			// Chop off \r\n from the end.
+				// Chop off \r\n from the end.
 			$body = substr($body, 0, -2);
 		}
 
-		// Reset the connection if the server asks for it.
+			// Reset the connection if the server asks for it.
 		if ($headers['connection'] !== 'Keep-Alive') {
 			fclose($this->connection);
 			$this->connection = NULL;
 		}
 
-		// Handle some response state as special cases
+			// Handle some response state as special cases
 		switch ($headers['status']) {
 			case 301:
 			case 302:
@@ -330,39 +331,39 @@ class HttpConnector {
 		}
 
 		switch ($headers['status']) {
-            case 200:
-                // The HTTP status code 200 - OK indicates, that we got a document
-                // or a set of documents as return value.
-                //
-                // To check wheather we received a set of documents or a single
-                // document we can check for the document properties _id or
-                // _rev, which are always available for documents and are only
-                // available for documents.
+			case 200:
+					// The HTTP status code 200 - OK indicates, that we got a document
+					// or a set of documents as return value.
+					//
+					// To check wheather we received a set of documents or a single
+					// document we can check for the document properties _id or
+					// _rev, which are always available for documents and are only
+					// available for documents.
 				if ($raw !== TRUE) {
 					return json_decode($body);
 				} else {
 					return new \F3\CouchDB\Client\RawResponse($headers, $body);
 				}
-            case 201:
-            case 202:
-                // The following status codes are given for status responses
-                // depending on the request type - which does not matter here any
-                // more.
-                return new \F3\CouchDB\Client\StatusResponse($body);
-            case 404:
-                // The 404 and 409 (412) errors are using custom exceptions
-                // extending the base error exception, because they are often
-                // required to be handled in a special way by the application.
-                throw new \F3\CouchDB\Client\NotFoundException($body);
-            case 409: // Conflict
-            case 412: // Precondition Failed - we just consider this as a conflict.
-                throw new \F3\CouchDB\Client\ConflictException($body);
-            default:
-                // All other unhandled HTTP codes are for now handled as an error.
-                // This may not be true, as lots of other status code may be used
-                // for valid repsonses.
-                throw new \F3\FLOW3\Exception('Unknown response status: ' . $headers['status'], 1287343089);
-        }
+			case 201:
+			case 202:
+					// The following status codes are given for status responses
+					// depending on the request type - which does not matter here any
+					// more.
+				return new \F3\CouchDB\Client\StatusResponse($body);
+			case 404:
+					// The 404 and 409 (412) errors are using custom exceptions
+					// extending the base error exception, because they are often
+					// required to be handled in a special way by the application.
+				throw new \F3\CouchDB\Client\NotFoundException($body, 1287395956);
+			case 409: // Conflict
+			case 412: // Precondition Failed - we just consider this as a conflict.
+				throw new \F3\CouchDB\Client\ConflictException($body, 1287395905);
+			default:
+					// All other unhandled HTTP codes are for now handled as an error.
+					// This may not be true, as lots of other status code may be used
+					// for valid repsonses.
+				throw new \RuntimeException('Unknown response status: ' . $headers['status'], 1287343089);
+		}
 	}
 }
 

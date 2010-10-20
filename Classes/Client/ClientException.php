@@ -28,8 +28,8 @@ namespace F3\CouchDB\Client;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
 class ClientException extends \F3\FLOW3\Persistence\Exception {
+
 	/**
-	 *
 	 * @var array
 	 */
 	protected $information;
@@ -40,20 +40,17 @@ class ClientException extends \F3\FLOW3\Persistence\Exception {
 	protected $message = 'CouchDB client exception';
 
 	/**
-	 * @var int
+	 * @param string $body JSON-encoded data
+	 * @param int $code
+	 * @param \Exception $previous
 	 */
-	protected $code = 1287395794;
-
-	/**
-	 * @param string $body
-	 */
-	public function __construct($body) {
+	public function __construct($body, $code = 0, \Exception $previous = NULL) {
 		$this->information = json_decode($body, TRUE);
-		parent::__construct(isset($this->information['reason']) ? $this->information['reason'] : $this->message, $this->code);
+		parent::__construct(isset($this->information['reason']) ? $this->information['reason'] : $this->message, $code, $previous);
 	}
 
 	/**
-	 * @return string
+	 * @return array
 	 */
 	public function getInformation() {
 		return $this->information;

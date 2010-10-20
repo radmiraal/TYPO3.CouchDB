@@ -5,6 +5,7 @@ namespace F3\CouchDB\Client;
  * A rather functional test for the HTTP connector
  */
 class HttpConnectorTest extends \F3\Testing\BaseTestCase {
+
 	/**
 	 * @var \F3\CouchDB\Client\HttpConnector
 	 */
@@ -15,9 +16,14 @@ class HttpConnectorTest extends \F3\Testing\BaseTestCase {
 	 */
 	public function setUp() {
 		$this->connector = new \F3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
-
-		$this->connector->delete('/flow3_test');
 		$this->connector->put('/flow3_test');
+	}
+
+	/**
+	 * Remove flow3_test database
+	 */
+	public function tearDown() {
+		$this->connector->delete('/flow3_test');
 	}
 
 	/**

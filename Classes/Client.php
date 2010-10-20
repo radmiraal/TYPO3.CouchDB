@@ -26,10 +26,16 @@ namespace F3\CouchDB;
  * A CouchDB client
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- *
  * @scope prototype
  */
 class Client {
+
+	/**
+	 * @inject
+	 * @var \F3\FLOW3\Object\ObjectManagerInterface
+	 */
+	protected $objectManager;
+
 	/**
 	 *
 	 * @var \F3\CouchDB\Client\HttpConnector
@@ -39,25 +45,34 @@ class Client {
 	/**
 	 * @var string
 	 */
-	protected $database;
+	protected $databaseName;
 
 	/**
 	 * Create a new CouchDB client
 	 *
 	 * @param string $dataSourceName The CouchDB connection parameters as URL, e.g. http://user:pass@127.0.0.1:5984
 	 * @param array $options Additional connection options for the HttpConnector
-	 * @return \F3\CouchDB\Client
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	public function __construct($dataSourceName, $options = array()) {
-		if (($urlParts = @parse_url($dataSourceName)) === FALSE) {
-			throw new \F3\FLOW3\Exception('Invalid data source name: ' . $dataSourceName, 1287346792);
+	public function __construct($dataSourceName, array $options = array()) {
+		$this->dataSourceName = $dataSourceName;
+		$this->options = $options;
+	}
+
+	/**
+	 * @return void
+	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 */
+	public function initializeObject() {
+		if (($urlParts = parse_url($this->dataSourceName)) === FALSE) {
+			throw new \InvalidArgumentException('Invalid data source name: ' . $this->dataSourceName, 1287346792);
 		}
 		$host = isset($urlParts['host']) ? $urlParts['host'] : NULL;
 		$port = isset($urlParts['port']) ? $urlParts['port'] : NULL;
 		$username = isset($urlParts['user']) ? $urlParts['user'] : NULL;
 		$password = isset($urlParts['pass']) ? $urlParts['pass'] : NULL;
-		$this->connector = new \F3\CouchDB\Client\HttpConnector($host, $port, $username, $password, $options);
+		$this->connector = $this->objectManager->create('F3\CouchDB\Client\HttpConnector', $host, $port, $username, $password, $this->options);
 	}
 
 	/**
@@ -73,36 +88,52 @@ class Client {
 	/**
 	 * Create a database
 	 *
-	 * @param string $database
+	 * @param string $databaseName The database name
 	 * @return boolean
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function createDatabase($database) {
-		$response = $this->connector->put('/' . urlencode($database));
+	public function createDatabase($databaseName) {
+		$response = $this->connector->put('/' . urlencode($databaseName));
 		return $response instanceof \F3\CouchDB\Client\StatusResponse && $response->isSuccess();
 	}
 
 	/**
 	 * Delete a database
 	 *
-	 * @param string $database
+	 * @param string $databaseName The database name
 	 * @return boolean
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function deleteDatabase($database) {
-		$response = $this->connector->delete('/' . urlencode($database));
+	public function deleteDatabase($databaseName) {
+		$response = $this->connector->delete('/' . urlencode($databaseName));
 		return $response instanceof \F3\CouchDB\Client\StatusResponse && $response->isSuccess();
 	}
 
 	/**
 	 * Get information about a database
 	 *
-	 * @param string $database The database name
+	 * @param string $databaseName The database name
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function databaseInformation($database) {
-		return $this->connector->get('/' . urlencode($database));
+	public function databaseInformation($databaseName) {
+		return $this->connector->get('/' . urlencode($databaseName));
+	}
+
+	/**
+	 * Check if a database exists
+	 *
+	 * @param string $databaseName The database name
+	 * @return boolean TRUE if the database exists
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function databaseExists($databaseName) {
+		try {
+			$information = $this->databaseInformation($databaseName);
+			return is_object($information) && $information->db_name === $databaseName;
+		} catch(\F3\CouchDB\Client\NotFoundException $e) {
+			return FALSE;
+		}
 	}
 
 	/**
@@ -112,8 +143,8 @@ class Client {
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function listDocuments($query = NULL) {
-		return $this->connector->get('/' . urlencode($this->getDatabase()) . '/_all_docs', $query);
+	public function listDocuments(array $query = NULL) {
+		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $query);
 	}
 
 	/**
@@ -124,8 +155,8 @@ class Client {
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getDocument($id, $query = NULL) {
-		return $this->connector->get('/' . urlencode($this->getDatabase()) . '/' . $this->getEncodedId($id), $query);
+	public function getDocument($id, array $query = NULL) {
+		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), $query);
 	}
 
 	/**
@@ -138,45 +169,45 @@ class Client {
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getDocuments($ids, $query = NULL) {
-		return $this->connector->post('/' . urlencode($this->getDatabase()) . '/_all_docs', $query, json_encode(array('keys' => $ids)));
+	public function getDocuments(array $ids, array $query = NULL) {
+		return $this->connector->post('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $query, json_encode(array('keys' => $ids)));
 	}
 
 	/**
 	 * Create a document either with a specified id, or by assigning a UUID
 	 * through CouchDB.
 	 *
-	 * @param mixed $idOrDocument Either the document id or the document itself as an string, array or object
-	 * @param array $documentOrNull The document or nothing if no id was given
+	 * @param mixed $document The document as a string, array or object
+	 * @param mixed $id An optional id to use for the document
 	 * @return \F3\CouchDB\Client\StatusResponse The creation response
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	public function createDocument($idOrDocument, $documentOrNull = NULL) {
-		if (is_string($idOrDocument)) {
-			if (!is_string($documentOrNull)) {
-				$document = json_encode($documentOrNull);
-			}
-			return $this->connector->put('/' . urlencode($this->getDatabase()) . '/' . $this->getEncodedId($idOrDocument), NULL, $document);
+	public function createDocument($document, $id = NULL) {
+		if (!is_string($document)) {
+			$document = json_encode($document);
+		}
+		if ($id === NULL) {
+			return $this->connector->post('/' . urlencode($this->getDatabaseName()), NULL, $document);
 		} else {
-			if (!is_string($idOrDocument)) {
-				$document = json_encode($idOrDocument);
-			}
-			return $this->connector->post('/' . urlencode($this->getDatabase()), NULL, $document);
+			return $this->connector->put('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), NULL, $document);
 		}
 	}
 
 	/**
 	 * Update a document
 	 *
+	 * @param mixed $document The document as a string, array or object
 	 * @param string $id The document id
-	 * @param mixed $document The document data as string or array / object
 	 * @return \F3\CouchDB\Client\StatusResponse The update response
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	public function updateDocument($id, $document) {
+	public function updateDocument($document, $id) {
 		if (!is_string($document)) {
 			$document = json_encode($document);
 		}
-		return $this->connector->put('/' . urlencode($this->getDatabase()) . '/' . $this->getEncodedId($id), NULL, $document);
+		return $this->connector->put('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), NULL, $document);
 	}
 
 	/**
@@ -185,26 +216,27 @@ class Client {
 	 * @param string $id The document id
 	 * @param string $revision The document revision
 	 * @return boolean TRUE if the deletion was successful
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function deleteDocument($id, $revision) {
-		$response = $this->connector->delete('/' . urlencode($this->getDatabase()) . '/' . $this->getEncodedId($id), array('rev' => $revision));
+		$response = $this->connector->delete('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), array('rev' => $revision));
 		return is_object($response) && $response->ok === TRUE;
 	}
 
 	/**
 	 * Query a view
-	 * 
+	 *
 	 * In addition to the default view query options (key, startkey, endkey, ...)
 	 * the query parameter "keys" can be specified to do multi-key lookups.
 	 *
-	 * @param string $design The design document name
-	 * @param string $view The view name
+	 * @param string $designDocumentName The design document name
+	 * @param string $viewName The view name
 	 * @param array $query Query options
 	 * @return mixed
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function queryView($design, $view, $query = NULL) {
-		$path = '/' . urlencode($this->getDatabase()) . '/_design/' . urlencode($design) . '/_view/' . urlencode($view);
+	public function queryView($designDocumentName, $viewName, array $query = NULL) {
+		$path = '/' . urlencode($this->getDatabaseName()) . '/_design/' . urlencode($designDocumentName) . '/_view/' . urlencode($viewName);
 		if ($query === NULL || !isset($query['keys'])) {
 			return $this->connector->get($path, $query);
 		} else {
@@ -221,7 +253,7 @@ class Client {
 	 * @return string
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function getEncodedId($id) {
+	protected function encodeId($id) {
 		if (strpos($id, '_design/') === 0) {
 			return '_design/' . urlencode(substr($id, strlen('_design/')));
 		} else {
@@ -231,6 +263,7 @@ class Client {
 
 	/**
 	 * @return \F3\CouchDB\Client\HttpConnector
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getConnector() {
 		return $this->connector;
@@ -238,19 +271,22 @@ class Client {
 
 	/**
 	 * @return string
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getDatabase() {
-		if ($this->database === NULL) {
-			throw new \F3\FLOW3\Exception('No database set', 1287349160);
+	protected function getDatabaseName() {
+		if ($this->databaseName === NULL) {
+			throw new \F3\FLOW3\Persistence\Exception('No database name set', 1287349160);
 		}
-		return $this->database;
+		return $this->databaseName;
 	}
 
 	/**
-	 * @param string $database
+	 * @param string $databaseName
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function setDatabase($database) {
-		$this->database = $database;
+	public function setDatabaseName($databaseName) {
+		$this->databaseName = $databaseName;
 	}
 }
 
