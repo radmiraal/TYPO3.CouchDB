@@ -231,18 +231,18 @@ class Client {
 	 *
 	 * @param string $designDocumentName The design document name
 	 * @param string $viewName The view name
-	 * @param array $query Query options
+	 * @param array $queryOptions Query options
 	 * @return mixed
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function queryView($designDocumentName, $viewName, array $query = NULL) {
+	public function queryView($designDocumentName, $viewName, array $queryOptions = NULL) {
 		$path = '/' . urlencode($this->getDatabaseName()) . '/_design/' . urlencode($designDocumentName) . '/_view/' . urlencode($viewName);
-		if ($query === NULL || !isset($query['keys'])) {
-			return $this->connector->get($path, $query);
+		if ($queryOptions === NULL || !isset($queryOptions['keys'])) {
+			return $this->connector->get($path, $queryOptions);
 		} else {
-			$keys = $query['keys'];
-			unset($query['keys']);
-			return $this->connector->post($path, $query, json_encode(array('keys' => $keys)));
+			$keys = $queryOptions['keys'];
+			unset($queryOptions['keys']);
+			return $this->connector->post($path, $queryOptions, json_encode(array('keys' => $keys)));
 		}
 	}
 

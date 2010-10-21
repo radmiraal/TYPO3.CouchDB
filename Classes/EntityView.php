@@ -54,7 +54,7 @@ class EntityView implements \F3\CouchDB\ViewInterface {
 	 * @param array $arguments
 	 * @return array CouchDB view query parameters
 	 */
-	public function getViewParameters($arguments) {
+	public function buildViewParameters(array $arguments) {
 		return array(
 			'startkey' => array($arguments['classname']),
 			'endkey' => array($arguments['classname'], '')

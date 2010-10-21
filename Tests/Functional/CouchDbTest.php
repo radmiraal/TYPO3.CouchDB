@@ -75,8 +75,12 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
 		$entities = $repository->findAll();
-		$this->assertContains($entity, $entities);
+		$foundEntity = $entities[0];
+		$this->assertEquals('Foobar', $foundEntity->getName());
 	}
 
 	/**
@@ -96,13 +100,18 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
 		$entities = $repository->findByName('Foo');
 		$this->assertEquals(1, count($entities));
-		$this->assertContains($entity1, $entities);
+		$foundEntity1 = $entities[0];
+		$this->assertEquals('Foo', $foundEntity1->getName());
 
 		$entities = $repository->findByName('Bar');
 		$this->assertEquals(1, count($entities));
-		$this->assertContains($entity2, $entities);
+		$foundEntity2 = $entities[0];
+		$this->assertContains('Bar', $foundEntity2->getName());
 	}
 
 	/**
@@ -121,6 +130,9 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
 
 		$count = $repository->countByName('Foo');
 		$this->assertEquals(1, $count);
@@ -223,6 +235,55 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$this->assertEquals('Red', $relatedValueObjects[0]->getColor());
 		$this->assertNotNull($relatedValueObjects[1]);
 		$this->assertEquals('Blue', $relatedValueObjects[1]->getColor());
+	}
+
+	/**
+	 * @test
+	 */
+	public function valueObjectsDontTriggerDirtyObject() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Entity with single valueobject');
+		$relatedValueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'Red');
+		$entity->setRelatedValueObject($relatedValueObject);
+
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$object = $repository->findOneByName('Entity with single valueobject');
+
+		$metadata = $object->FLOW3_AOP_Proxy_getProperty('FLOW3_Persistence_Metadata');
+		$revision = $metadata['CouchDB_Revision'];
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$object = $repository->findOneByName('Entity with single valueobject');
+
+		$metadata = $object->FLOW3_AOP_Proxy_getProperty('FLOW3_Persistence_Metadata');
+		$newRevision = $metadata['CouchDB_Revision'];
+
+		$this->assertEquals($revision, $newRevision);
+	}
+
+	/**
+	 * Persist all and destroy the persistence session for the next test
+	 */
+	public function tearDown() {
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
 	}
 }
 ?>

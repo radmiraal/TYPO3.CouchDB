@@ -28,6 +28,7 @@ namespace F3\CouchDB\Tests\Unit;
  * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
 class QueryViewTest extends \F3\Testing\BaseTestCase {
+
 	/**
 	 * @test
 	 */
@@ -134,7 +135,7 @@ class QueryViewTest extends \F3\Testing\BaseTestCase {
 
 		$queryView = new \F3\CouchDB\QueryView($mockQuery);
 
-		$viewParameters = $queryView->getViewParameters(array('query' => $mockQuery));
+		$viewParameters = $queryView->buildViewParameters(array('query' => $mockQuery));
 		$expectedParameters = array(
 			'include_docs' => TRUE,
 			'key' => 'Test',
@@ -219,7 +220,7 @@ class QueryViewTest extends \F3\Testing\BaseTestCase {
 
 		$queryView = new \F3\CouchDB\QueryView($mockQuery);
 
-		$viewParameters = $queryView->getViewParameters(array('query' => $mockQuery));
+		$viewParameters = $queryView->buildViewParameters(array('query' => $mockQuery));
 		$expectedParameters = array(
 			'include_docs' => TRUE,
 			'key' => array(
@@ -254,7 +255,7 @@ class QueryViewTest extends \F3\Testing\BaseTestCase {
 
 		$queryView = new \F3\CouchDB\QueryView($mockQuery);
 
-		$viewParameters = $queryView->getViewParameters(array('query' => $mockQuery, 'count' => TRUE));
+		$viewParameters = $queryView->buildViewParameters(array('query' => $mockQuery, 'count' => TRUE));
 		$expectedParameters = array(
 			'reduce' => TRUE
 		);

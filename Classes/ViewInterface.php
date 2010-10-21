@@ -28,6 +28,7 @@ namespace F3\CouchDB;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
 interface ViewInterface {
+
 	/**
 	 * Get the design name where the view is defined
 	 * @return string
@@ -57,7 +58,7 @@ interface ViewInterface {
 	 * @param array $arguments
 	 * @return array CouchDB view query parameters
 	 */
-	public function getViewParameters($arguments);
+	public function buildViewParameters(array $arguments);
 }
 
 ?>

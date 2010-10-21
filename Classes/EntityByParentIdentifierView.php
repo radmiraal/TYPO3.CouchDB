@@ -56,7 +56,7 @@ class EntityByParentIdentifierView implements \F3\CouchDB\ViewInterface {
 	 * @param array $arguments
 	 * @return array CouchDB view query parameters
 	 */
-	public function getViewParameters($arguments) {
+	public function buildViewParameters(array $arguments) {
 		if (isset($arguments['parentIdentifier'])) {
 			$parentIdentifier = $arguments['parentIdentifier'];
 

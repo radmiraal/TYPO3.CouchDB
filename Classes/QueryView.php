@@ -29,6 +29,7 @@ namespace F3\CouchDB;
  * @scope prototype
  */
 class QueryView implements \F3\CouchDB\ViewInterface {
+
 	/**
 	 *
 	 * @var array
@@ -54,14 +55,17 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		$this->type = $query->getType();
 		if ($constraint !== NULL) {
 			$this->emits = $this->buildEmitsForConstraint($constraint);
+			$constraintName = '_' . $this->buildNameForConstraint($constraint);
+		} else {
+			$constraintName = '';
 		}
-		$constraintName = $this->buildNameForConstraint($constraint);
-		$this->name = $this->type . (($constraintName !== '') ? '_' . $constraintName : '');
+		$this->name = $this->type . $constraintName;
 	}
 
 	/**
 	 *
 	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @return array
 	 */
 	protected function buildEmitsForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
 		$emits = array();
@@ -85,6 +89,11 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		return $emits;
 	}
 
+	/**
+	 *
+	 * @param \F3\FLOW3\Persistence\Qom\Operand $operand
+	 * @return \stdClass
+	 */
 	protected function buildEmitForOperand(\F3\FLOW3\Persistence\Qom\Operand $operand) {
 		$emit = new \stdClass();
 		if ($operand instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
@@ -96,10 +105,13 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		return $emit;
 	}
 
-	protected function buildNameForConstraint($constraint) {
-		if ($constraint === NULL) {
-			return '';
-		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
+	/**
+	 *
+	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @return string
+	 */
+	protected function buildNameForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
+		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				if ($constraint->getOperand1() instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
 					return 'equals<' . $constraint->getOperand1()->getPropertyName() . '>';
@@ -107,14 +119,14 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 			}
 		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
 			return 'and<' . $this->buildNameForConstraint($constraint->getConstraint1()) . ',' . $this->buildNameForConstraint($constraint->getConstraint2()) . '>';
-		} else {
-			throw new \InvalidArgumentException('Constraint ' . get_class($constraint) . ' is not supported by CouchDB QueryView', 1286466489);
 		}
+		return '';
 	}
 
 	/**
 	 *
 	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @return mixed
 	 */
 	protected function buildKeyForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
 		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
@@ -170,7 +182,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	 * @param array $arguments
 	 * @return array CouchDB view query parameters
 	 */
-	public function getViewParameters($arguments) {
+	public function buildViewParameters(array $arguments) {
 		if (isset($arguments['query']) && $arguments['query'] instanceof \F3\FLOW3\Persistence\QueryInterface) {
 			$query = $arguments['query'];
 
@@ -199,7 +211,6 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 			}
 
 			return $parameters;
-
 		} else {
 			throw new Exception('query argument for QueryView must implement QueryInterface', 1286369598);
 		}
