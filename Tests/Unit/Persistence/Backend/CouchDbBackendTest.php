@@ -28,19 +28,6 @@ namespace F3\CouchDB\Tests\Unit\Persistence\Backend;
  * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
 class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
-	/**
-	 * @test
-	 * @author Christopher Hlubek <hlubek@networkteam.com>
-	 */
-	public function initializeIgnoresOptionsWithNullValue() {
-		$mockReflectionService = $this->getMock('F3\FLOW3\Reflection\ReflectionService');
-		$mockReflectionService->expects($this->any())->method('getClassSchemata');
-
-		$backend = $this->getMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('connect'));
-		$backend->expects($this->any())->method('connect');
-		$backend->injectReflectionService($mockReflectionService);
-		$backend->initialize(array('noOptionLikeThis' => NULL, 'dataSourceName' => 'http://1.2.3.4:5678'));
-	}
 
 	/**
 	 * @test
@@ -55,7 +42,6 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$backend->injectReflectionService($mockReflectionService);
 
 		$backend->initialize(array('database' => 'foo', 'dataSourceName' => 'http://1.2.3.4:5678'));
-
 	}
 
 }

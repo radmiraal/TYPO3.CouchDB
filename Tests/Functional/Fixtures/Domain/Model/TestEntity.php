@@ -34,7 +34,7 @@ class TestEntity {
 	/**
 	 * @var string
 	 */
-    protected $name;
+	protected $name;
 
 	/**
 	 *

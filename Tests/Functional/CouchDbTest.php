@@ -60,7 +60,7 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 	 */
 	public function createEntity() {
 		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
-		$this->assertNotNull($entity);
+		$this->assertType('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity', $entity);
 	}
 
 	/**
