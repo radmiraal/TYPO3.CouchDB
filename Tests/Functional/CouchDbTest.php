@@ -1,9 +1,8 @@
 <?php
-namespace F3\CouchDB\Testing;
+declare(ENCODING = 'utf-8');
+namespace F3\CouchDB\Tests\Functional;
 
-require_once(__DIR__ . '/BaseFunctionalTestCase.php');
-
-class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
+class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 
 	/**
 	 *
@@ -16,7 +15,7 @@ class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 	 *
 	 */
 	protected function resetPersistenceBackend() {
-		$backend = $this->getObjectManager()->get('F3\FLOW3\Persistence\Backend\BackendInterface');
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
 		$backend->resetStorage();
 	}
 
@@ -24,7 +23,7 @@ class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 	 * @test
 	 */
 	public function backendIsCouchDbBackend() {
-		$backend = $this->getObjectManager()->get('F3\FLOW3\Persistence\Backend\BackendInterface');
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
 		$this->assertType('F3\CouchDB\Persistence\Backend\CouchDbBackend', $backend);
 	}
 
@@ -32,7 +31,7 @@ class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 	 * @test
 	 */
 	public function createEntity() {
-		$entity = $this->getObjectManager()->create('F3\CouchDB\Testing\Domain\Model\TestEntity');
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$this->assertNotNull($entity);
 	}
 
@@ -40,12 +39,12 @@ class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 	 * @test
 	 */
 	public function persistEntity() {
-		$repository = $this->getObjectManager()->get('F3\CouchDB\Testing\Domain\Repository\TestEntityRepository');
-		$entity = $this->getObjectManager()->create('F3\CouchDB\Testing\Domain\Model\TestEntity');
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity->setName('Foobar');
 		$repository->add($entity);
-		
-		$persistenceManager = $this->getObjectManager()->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
 		$entities = $repository->findAll();
@@ -56,17 +55,17 @@ class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 	 * @test
 	 */
 	public function queryByEqualsReturnsCorrectObjects() {
-		$repository = $this->getObjectManager()->get('F3\CouchDB\Testing\Domain\Repository\TestEntityRepository');
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity1 = $this->getObjectManager()->create('F3\CouchDB\Testing\Domain\Model\TestEntity');
+		$entity1 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity1->setName('Foo');
 		$repository->add($entity1);
 
-		$entity2 = $this->getObjectManager()->create('F3\CouchDB\Testing\Domain\Model\TestEntity');
+		$entity2 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity2->setName('Bar');
 		$repository->add($entity2);
-		
-		$persistenceManager = $this->getObjectManager()->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
 		$entities = $repository->findByName('Foo');
@@ -82,17 +81,17 @@ class CouchDbTest extends \F3\CouchDB\Testing\BaseFunctionalTestCase {
 	 * @test
 	 */
 	public function countyByEqualsReturnsCorrectObjects() {
-		$repository = $this->getObjectManager()->get('F3\CouchDB\Testing\Domain\Repository\TestEntityRepository');
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity1 = $this->getObjectManager()->create('F3\CouchDB\Testing\Domain\Model\TestEntity');
+		$entity1 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity1->setName('Foo');
 		$repository->add($entity1);
 
-		$entity2 = $this->getObjectManager()->create('F3\CouchDB\Testing\Domain\Model\TestEntity');
+		$entity2 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity2->setName('Bar');
 		$repository->add($entity2);
 
-		$persistenceManager = $this->getObjectManager()->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
 		$count = $repository->countByName('Foo');

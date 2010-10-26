@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Persistence\Backend;
+namespace F3\CouchDB\Tests\Unit\Persistence\Backend;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *

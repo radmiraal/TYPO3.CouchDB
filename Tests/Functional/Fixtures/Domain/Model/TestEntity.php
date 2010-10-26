@@ -1,5 +1,6 @@
 <?php
-namespace F3\CouchDB\Testing\Domain\Model;
+declare(ENCODING = 'utf-8');
+namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
 
 /**
  * @scope prototype

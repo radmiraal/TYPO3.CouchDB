@@ -1,5 +1,6 @@
 <?php
-namespace F3\CouchDB\Client;
+declare(ENCODING = 'utf-8');
+namespace F3\CouchDB\Tests\Unit\Client;
 
 /**
  * A rather functional test for the HTTP connector

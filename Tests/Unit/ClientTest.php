@@ -1,5 +1,6 @@
 <?php
-namespace F3\CouchDB;
+declare(ENCODING = 'utf-8');
+namespace F3\CouchDB\Tests\Unit;
 
 /**
  * A rather functional test for the CouchDB client
