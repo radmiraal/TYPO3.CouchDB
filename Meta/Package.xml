@@ -2,6 +2,14 @@
 <package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://typo3.org/ns/2008/flow3/package" version="1.0">
 	<key>CouchDB</key>
 	<title>CouchDB persistence backend</title>
-	<description/>
-	<version/>
+	<description>A CouchDB persistence backend for FLOW3 with automatic query to view conversion</description>
+	<version>1.0.0-alpha1</version>
+	<categories/>
+	<parties>
+		<person role="LeadDeveloper">
+				<name>Christopher Hlubek</name>
+				<email>hlubek@networkteam.com</email>
+				<organisation>networkteam GmbH</organisation>
+		</person>
+	</parties>
 </package>

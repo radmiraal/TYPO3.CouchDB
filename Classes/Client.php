@@ -23,7 +23,7 @@ namespace F3\CouchDB;
  *                                                                        */
 
 /**
- * A CouchDB client
+ * A CouchDB client using an HTTP connector
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope prototype

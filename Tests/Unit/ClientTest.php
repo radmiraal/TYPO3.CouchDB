@@ -2,8 +2,32 @@
 declare(ENCODING = 'utf-8');
 namespace F3\CouchDB\Tests\Unit;
 
+/*                                                                        *
+ * This script belongs to the FLOW3 package "CouchDB".                    *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
+ *                                                                        *
+ * The TYPO3 project - inspiring people to share!                         *
+ *                                                                        */
+
 /**
- * A rather functional test for the CouchDB client
+ * A rather functional test for the CouchDB client.
+ *
+ * Needs a running CouchDB on http://127.0.0.1:5984.
+ *
+ * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
 class ClientTest extends \F3\Testing\BaseTestCase {
 
@@ -13,29 +37,34 @@ class ClientTest extends \F3\Testing\BaseTestCase {
 	protected $client;
 
 	/**
+	 * @var string
+	 */
+	protected $databaseName = 'flow3_testing';
+
+	/**
 	 * Setup a CouchDB HTTP connector
 	 */
 	public function setUp() {
-		$connector = new \F3\CouchDB\Client\HttpConnector('127.0.0.1', '5984');
+		$connector = new \F3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
 		$mockObjectManager = $this->getMock('F3\FLOW3\Object\ObjectManagerInterface');
 		$mockObjectManager->expects($this->once())->method('create')->with('F3\CouchDB\Client\HttpConnector', '127.0.0.1', '5984', NULL, NULL, array())->will($this->returnValue($connector));
 		$this->client = $this->getAccessibleMock('F3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984'));
 		$this->client->_set('objectManager', $mockObjectManager);
 		$this->client->initializeObject();
 
-		if ($this->client->databaseExists('flow3_test')) {
-			$this->client->deleteDatabase('flow3_test');
+		if ($this->client->databaseExists($this->databaseName)) {
+			$this->client->deleteDatabase($this->databaseName);
 		}
-		$this->client->createDatabase('flow3_test');
-		$this->client->setDatabaseName('flow3_test');
+		$this->client->createDatabase($this->databaseName);
+		$this->client->setDatabaseName($this->databaseName);
 	}
 
 	/**
-	 * Remove flow3_test database
+	 * Remove the test database
 	 */
 	public function tearDown() {
-		if ($this->client->databaseExists('flow3_test')) {
-			$this->client->deleteDatabase('flow3_test');
+		if ($this->client->databaseExists($this->databaseName)) {
+			$this->client->deleteDatabase($this->databaseName);
 		}
 	}
 
@@ -44,15 +73,15 @@ class ClientTest extends \F3\Testing\BaseTestCase {
 	 */
 	public function listDatabasesWorks() {
 		$response = $this->client->listDatabases();
-		$this->assertContains('flow3_test', $response);
+		$this->assertContains($this->databaseName, $response);
 	}
 
 	/**
 	 * @test
 	 */
 	public function databasesInformationWorks() {
-		$response = $this->client->databaseInformation('flow3_test');
-		$this->assertEquals('flow3_test', $response->db_name);
+		$response = $this->client->databaseInformation($this->databaseName);
+		$this->assertEquals($this->databaseName, $response->db_name);
 	}
 
 	/**
