@@ -90,12 +90,16 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 		if ($operand instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
 			$emit->type = 'property';
 			$emit->property = $operand->getPropertyName();
+		} else {
+			throw new \InvalidArgumentException('Operand ' . get_class($operand) . ' is not supported by CouchDB QueryView', 1288606014);
 		}
 		return $emit;
 	}
 
 	protected function buildNameForConstraint($constraint) {
-		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
+		if ($constraint === NULL) {
+			return '';
+		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				if ($constraint->getOperand1() instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
 					return 'equals<' . $constraint->getOperand1()->getPropertyName() . '>';
@@ -103,8 +107,9 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 			}
 		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
 			return 'and<' . $this->buildNameForConstraint($constraint->getConstraint1()) . ',' . $this->buildNameForConstraint($constraint->getConstraint2()) . '>';
+		} else {
+			throw new \InvalidArgumentException('Constraint ' . get_class($constraint) . ' is not supported by CouchDB QueryView', 1286466489);
 		}
-		return '';
 	}
 
 	/**
@@ -114,21 +119,34 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	protected function buildKeyForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
 		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
-				// TODO Suport other operands?
-				return (string)$constraint->getOperand2();
+				return $this->buildKeyForOperand($constraint->getOperand2());
 			}
 		} elseif($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
 			return array(
 				$this->buildKeyForConstraint($constraint->getConstraint1()),
 				$this->buildKeyForConstraint($constraint->getConstraint2())
 			);
+		} else {
+			throw new \InvalidArgumentException('Constraint ' . get_class($constraint) . ' is not supported by CouchDB QueryView', 1288606305);
 		}
 		return NULL;
 	}
 
 	/**
-	 * Get the design name where the view is defined. This is FLOW3 as a
-	 * default for a QueryView.
+	 *
+	 * @param mixed $operand The operand as string or object
+	 */
+	protected function buildKeyForOperand($operand) {
+		if (is_string($operand)) {
+			return $operand;
+		} else {
+			throw new \InvalidArgumentException('Non-string operand value of type ' . get_class($operand) . ' is not supported by CouchDB QueryView', 1288606494);
+		}
+	}
+
+	/**
+	 * Get the design name where the view is defined. This defaults to FLOW3
+	 * for a QueryView.
 	 *
 	 * @return string
 	 */
@@ -192,36 +210,44 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	 * @return string The function source code or null if no map function defined
 	 */
 	public function getMapFunctionSource() {
-		return 'function(doc) { if (doc.classname == "' . addslashes($this->type) . '") {' . $this->getEmitStatements() .  '} }';
+		return 'function(doc){if(doc.classname=="' . addslashes($this->type) . '"){' . $this->getEmitStatements() .  '}}';
 	}
 
 	/**
 	 * @return string
 	 */
-	protected function getEmitStatements() {
+	public function getEmitStatements() {
 		$statements = array();
 		if (count($this->emits) > 0) {
 			foreach ($this->emits as $emit) {
-				$statements[] = 'emit(' . $this->buildEmitIndex($emit) . ', null);';
+				$statements[] = 'emit(' . $this->buildEmitIndex($emit) . ',null);';
 			}
 		} else {
-			$statements[] = 'emit(doc._id, null);';
+			$statements[] = 'emit(doc._id,null);';
 		}
 		return implode(chr(10), $statements);
 	}
 
+	/**
+	 * Get the index value (key) for an emit
+	 *
+	 * @return string
+	 */
 	protected function buildEmitIndex($emit) {
 		if (is_object($emit)) {
 			if ($emit->type === 'property') {
 				return 'doc.properties["' . $emit->property . '"].value';
 			} elseif ($emit->type === 'and') {
-				return '[' . $this->buildEmitIndex($emit->constraints[0]) . ', ' . $this->buildEmitIndex($emit->constraints[1]) . ']';
+				return '[' . $this->buildEmitIndex($emit->constraints[0]) . ',' . $this->buildEmitIndex($emit->constraints[1]) . ']';
 			}
 		}
 	}
 
 	/**
-	 * Get the reduce function for the view as JavaScript source
+	 * Get the reduce function for the view as JavaScript source. The query
+	 * view uses the builtin "_count" function to execute counts on queries
+	 * efficiently.
+	 *
 	 * @return string The function source code or null if no map function defined
 	 */
 	public function getReduceFunctionSource() {
