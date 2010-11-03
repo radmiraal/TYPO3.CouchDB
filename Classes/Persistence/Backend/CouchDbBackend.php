@@ -285,7 +285,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 *
 	 * @param \DateTime $dateTime
 	 * @return integer
-	 * @todo Return a JavaScript Date parseable Format (e.g. "2008/06/09 13:52:11 +0000")
+	 * @todo (Later) Return a JavaScript Date parseable Format (e.g. "2008/06/09 13:52:11 +0000")
 	 */
 	protected function processDateTime(\DateTime $dateTime = NULL) {
 		if ($dateTime instanceof \DateTime) {
@@ -308,8 +308,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function processArray(array $array, $parentIdentifier, array $previousArray = NULL) {
-		if ($previousArray !== NULL) {
+	protected function processArray(array $array = NULL, $parentIdentifier = '', array $previousArray = NULL) {
+		if ($previousArray !== NULL && is_array($previousArray['value'])) {
 			$this->removeDeletedArrayEntries($array, $previousArray['value']);
 		}
 
@@ -331,13 +331,28 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 				throw new \F3\FLOW3\Persistence\Exception('ArrayObject instances in arrays are not supported - missing feature?!?', 1283524345);
 			} elseif (is_object($value)) {
 				$type = $this->getType($value);
-				$values[] = array(
-					'type' => $type,
-					'index' => $key,
-					'value' => array(
-						'identifier' => $this->persistObject($value, $parentIdentifier)
-					)
-				);
+				$classSchema = $this->classSchemata[$value->FLOW3_AOP_Proxy_getProxyTargetClassName()];
+				$valueIdentifier = $this->getIdentifierFromObject($value);
+				if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
+					$noDirtyOnValueObject = FALSE;
+					$values[] = array(
+						'type' => $type,
+						'index' => $key,
+						'value' => array(
+							'identifier' => $valueIdentifier,
+							'classname' => $classSchema->getClassName(),
+							'properties' => $this->collectProperties($classSchema->getProperties(), $value, $valueIdentifier, $noDirtyOnValueObject)
+						)
+					);
+				} else {
+					$values[] = array(
+						'type' => $type,
+						'index' => $key,
+						'value' => array(
+							'identifier' => $this->persistObject($value, $parentIdentifier)
+						)
+					);
+				}
 			} elseif (is_array($value)) {
 				$values[] = array(
 					'type' => 'array',
@@ -411,7 +426,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return array An array with "flat" values representing the SplObjectStorage
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	protected function processSplObjectStorage(\SplObjectStorage $splObjectStorage, $parentIdentifier, array $previousObjectStorage = NULL) {
+	protected function processSplObjectStorage(\SplObjectStorage $splObjectStorage = NULL, $parentIdentifier = '', array $previousObjectStorage = NULL) {
 		if ($previousObjectStorage !== NULL && $previousObjectStorage['value'] !== NULL) {
 			$this->removeDeletedSplObjectStorageEntries($splObjectStorage, $previousObjectStorage['value']);
 		}
@@ -434,14 +449,28 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 				throw new \F3\FLOW3\Persistence\Exception('ArrayObject instances in SplObjectStorage are not supported - missing feature?!?', 1283524350);
 			} else {
 				$type = $this->getType($object);
-				// TODO Handle value object inline!
-				$values[] = array(
-					'type' => $type,
-					'index' => NULL,
-					'value' => array(
-						'identifier' => $this->persistObject($object, $parentIdentifier)
-					)
-				);
+				$classSchema = $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()];
+				$objectIdentifier = $this->getIdentifierFromObject($object);
+				if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
+					$noDirtyOnValueObject = FALSE;
+					$values[] = array(
+						'type' => $type,
+						'index' => NULL,
+						'value' => array(
+							'identifier' => $objectIdentifier,
+							'classname' => $classSchema->getClassName(),
+							'properties' => $this->collectProperties($classSchema->getProperties(), $object, $objectIdentifier, $noDirtyOnValueObject)
+						)
+					);
+				} else {
+					$values[] = array(
+						'type' => $type,
+						'index' => NULL,
+						'value' => array(
+							'identifier' => $this->persistObject($object, $parentIdentifier)
+						)
+					);
+				}
 			}
 		}
 
@@ -457,7 +486,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return void
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	protected function removeDeletedSplObjectStorageEntries(\SplObjectStorage $splObjectStorage, array $previousObjectStorage) {
+	protected function removeDeletedSplObjectStorageEntries(\SplObjectStorage $splObjectStorage = NULL, array $previousObjectStorage = NULL) {
 			// remove objects detached since reconstitution
 		foreach ($previousObjectStorage as $item) {
 			if ($splObjectStorage instanceof \F3\FLOW3\Persistence\LazySplObjectStorage && !$this->persistenceSession->hasIdentifier($item['value']['identifier'])) {
@@ -506,7 +535,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function removeEntitiesByParent($identifier) {
-		$result = $this->getView($this->getEntityByParentIdentifierView(), array('parentIdentifier' => $identifier));
+		$result = $this->queryView($this->getEntityByParentIdentifierView(), array('parentIdentifier' => $identifier));
 		if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
 			foreach ($result->rows as $row) {
 				$object = $this->persistenceSession->getObjectByIdentifier($row->id);
@@ -539,10 +568,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param \F3\CouchDB\ViewInterface $view
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
-	 * @todo Cache Design document and only store view if it's not yet defined or changed
-	 * @todo getDoc('_design/...') should not escape design name, causes redirect in CouchDB
 	 */
-	protected function storeView(\F3\CouchDB\ViewInterface $view) {
+	public function storeView(\F3\CouchDB\ViewInterface $view) {
 		try {
 			$design = $this->doOperation(function($client) use ($view) {
 				return $client->getDocument('_design/' . $view->getDesignName());
@@ -584,7 +611,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function getObjectCountByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
 		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
-		$result = $this->getView($view, array('query' => $query, 'count' => TRUE));
+		$result = $this->queryView($view, array('query' => $query, 'count' => TRUE));
 		if (is_array($result->rows)) {
 			return (count($result->rows) === 1) ? $result->rows[0]->value : 0;
 		} else {
@@ -634,7 +661,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, $arguments) {
-		$result = $this->getView($view, $arguments);
+		$result = $this->queryView($view, $arguments);
 		$data = array();
 		if ($result !== NULL) {
 			foreach ($result->rows as $row) {
@@ -652,10 +679,15 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param array $arguments
 	 * @return array The results of the view
 	 */
-	public function getView(\F3\CouchDB\ViewInterface $view, $arguments) {
-		$this->storeView($view);
-		return $this->doOperation(function($client) use ($view, &$arguments) {
-			return $client->queryView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
+	public function queryView(\F3\CouchDB\ViewInterface $view, $arguments) {
+		$that = $this;
+		return $this->doOperation(function($client) use ($view, &$arguments, $that) {
+			try {
+				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
+			} catch(\F3\CouchDB\Client\NotFoundException $e) {
+				$that->storeView($view);
+				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->getViewParameters($arguments));
+			}
 		});
 	}
 
@@ -666,27 +698,36 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param array $result The raw document from CouchDB
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
-	 * @todo Remember identifiers and paths to fetch and get all documents in one call
 	 */
 	protected function resultToObjectData($result) {
 		$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($result);
 		$objectData['metadata'] = array(
 			'CouchDB_Revision' => $objectData['_rev']
 		);
+		$identifiersToFetch = array();
 		foreach ($objectData['properties'] as $propertyName => $propertyData) {
 			if (!$propertyData['multivalue']) {
 				// Load entity
 				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {
-					$objectData['properties'][$propertyName]['value'] = $this->getObjectDataByIdentifier($propertyData['value']['identifier']);
+					$identifiersToFetch[$propertyData['value']['identifier']] = NULL;
+					$objectData['properties'][$propertyName]['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
 				}
 			} else {
 				for ($index = 0; $index < count($propertyData['value']); $index++) {
 					// Load entity
 					if (isset($propertyData['value'][$index]['value']['identifier']) && !isset($propertyData['value'][$index]['value']['classname'])) {
-						$objectData['properties'][$propertyName]['value'][$index]['value'] = $this->getObjectDataByIdentifier($propertyData['value'][$index]['value']['identifier']);
+						$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']] = NULL;
+						$objectData['properties'][$propertyName]['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
 					}
 				}
 			}
+		}
+
+		$documents = $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
+			return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
+		});
+		foreach ($documents->rows as $document) {
+			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc);
 		}
 		return $objectData;
 	}

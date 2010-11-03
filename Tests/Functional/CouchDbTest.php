@@ -135,5 +135,94 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$this->assertEquals(2, $count);
 
 	}
+
+	/**
+	 * @test
+	 */
+	public function nestedSinglevalueEntityIsFetchedCorrectly() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Foo');
+		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity->setName('Bar');
+		$entity->setRelatedEntity($relatedEntity);
+		$repository->add($entity);
+
+		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity->setName('Bar');
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->clear();
+
+		$fooEntity = $repository->findOneByName('Foo');
+		$this->assertNotNull($fooEntity);
+		$this->assertNotNull($fooEntity->getRelatedEntity());
+		$this->assertEquals('Bar', $fooEntity->getRelatedEntity()->getName());
+	}
+
+	/**
+	 * @test
+	 */
+	public function nestedMultivalueSplObjectStorageEntityIsFetchedCorrectly() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Entity with nested SplObjectStorage entities');
+		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity->setName('Nested entity');
+		$relatedEntities = new \SplObjectStorage();
+		$relatedEntities->attach($relatedEntity);
+		$entity->setRelatedEntities($relatedEntities);
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->clear();
+
+		$fooEntity = $repository->findOneByName('Entity with nested SplObjectStorage entities');
+		$this->assertNotNull($fooEntity);
+		$this->assertNotNull($fooEntity->getRelatedEntities());
+		$this->assertEquals(1, count($fooEntity->getRelatedEntities()));
+		$fooEntity->getRelatedEntities()->rewind();
+		$barEntity = $fooEntity->getRelatedEntities()->current();
+		$this->assertNotNull($barEntity);
+		$this->assertEquals('Nested entity', $barEntity->getName());
+	}
+
+	/**
+	 * @test
+	 */
+	public function nestedMultivalueArrayValueObjectIsHandledCorrectly() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Entity with nested array valueobjects');
+		$relatedValueObject1 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'Red');
+		$relatedValueObject2 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'Blue');
+		$entity->setRelatedValueObjects(array($relatedValueObject1, $relatedValueObject2));
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->clear();
+
+		$fooEntity = $repository->findOneByName('Entity with nested array valueobjects');
+		$this->assertNotNull($fooEntity);
+		$this->assertNotNull($fooEntity->getRelatedValueObjects());
+		$this->assertEquals(2, count($fooEntity->getRelatedValueObjects()));
+		$relatedValueObjects = $fooEntity->getRelatedValueObjects();
+		$this->assertNotNull($relatedValueObjects[0]);
+		$this->assertEquals('Red', $relatedValueObjects[0]->getColor());
+		$this->assertNotNull($relatedValueObjects[1]);
+		$this->assertEquals('Blue', $relatedValueObjects[1]->getColor());
+	}
 }
 ?>

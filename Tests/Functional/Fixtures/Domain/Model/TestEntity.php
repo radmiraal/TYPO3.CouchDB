@@ -30,11 +30,33 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
  * @entity
  */
 class TestEntity {
+
 	/**
-	 *
 	 * @var string
 	 */
     protected $name;
+
+	/**
+	 *
+	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
+	 */
+	protected $relatedValueObject;
+
+	/**
+	 *
+	 * @var array<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
+	 */
+	protected $relatedValueObjects;
+
+	/**
+	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 */
+	protected $relatedEntity;
+
+	/**
+	 * @var \SplObjectStorage<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 */
+	protected $relatedEntities;
 
 	/**
 	 *
@@ -51,5 +73,68 @@ class TestEntity {
 	public function setName($name) {
 		$this->name = $name;
 	}
+
+	/**
+	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 */
+	public function getRelatedEntity() {
+		return $this->relatedEntity;
+	}
+
+	/**
+	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $relatedEntity
+	 */
+	public function setRelatedEntity($relatedEntity) {
+		$this->relatedEntity = $relatedEntity;
+	}
+
+	/**
+	 *
+	 * @return \SplObjectStorage<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 */
+	public function getRelatedEntities() {
+		return $this->relatedEntities;
+	}
+
+	/**
+	 *
+	 * @param \SplObjectStorage<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity> $relatedEntities
+	 */
+	public function setRelatedEntities($relatedEntities) {
+		$this->relatedEntities = $relatedEntities;
+	}
+
+	/**
+	 *
+	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
+	 */
+	public function getRelatedValueObject() {
+		return $this->relatedValueObject;
+	}
+
+	/**
+	 *
+	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject $relatedValueObject
+	 */
+	public function setRelatedValueObject($relatedValueObject) {
+		$this->relatedValueObject = $relatedValueObject;
+	}
+
+	/**
+	 *
+	 * @return array<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
+	 */
+	public function getRelatedValueObjects() {
+		return $this->relatedValueObjects;
+	}
+
+	/**
+	 *
+	 * @param array<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject> $relatedValueObjects
+	 */
+	public function setRelatedValueObjects($relatedValueObjects) {
+		$this->relatedValueObjects = $relatedValueObjects;
+	}
+
 }
 ?>
