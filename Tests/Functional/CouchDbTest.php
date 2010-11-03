@@ -156,7 +156,7 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$persistenceManager->persistAll();
 
 		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->clear();
+		$persistenceSession->destroy();
 
 		$fooEntity = $repository->findOneByName('Foo');
 		$this->assertNotNull($fooEntity);
@@ -183,7 +183,7 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$persistenceManager->persistAll();
 
 		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->clear();
+		$persistenceSession->destroy();
 
 		$fooEntity = $repository->findOneByName('Entity with nested SplObjectStorage entities');
 		$this->assertNotNull($fooEntity);
@@ -212,7 +212,7 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 		$persistenceManager->persistAll();
 
 		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->clear();
+		$persistenceSession->destroy();
 
 		$fooEntity = $repository->findOneByName('Entity with nested array valueobjects');
 		$this->assertNotNull($fooEntity);
