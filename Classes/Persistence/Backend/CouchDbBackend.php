@@ -436,8 +436,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function resultToObjectData($result) {
+	protected function resultToObjectData($result, &$knownObjects = array()) {
 		$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($result);
+		$knownObjects[$objectData['identifier']] = TRUE;
 		$objectData['metadata'] = array(
 			'CouchDB_Revision' => $objectData['_rev']
 		);
@@ -445,14 +446,18 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		foreach ($objectData['properties'] as $propertyName => $propertyData) {
 			if (!$propertyData['multivalue']) {
 				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {
-					$identifiersToFetch[$propertyData['value']['identifier']] = NULL;
-					$objectData['properties'][$propertyName]['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
+					if (!isset($knownObjects[$propertyData['value']['identifier']])) {
+						$identifiersToFetch[$propertyData['value']['identifier']] = NULL;
+						$objectData['properties'][$propertyName]['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
+					}
 				}
 			} else {
 				for ($index = 0; $index < count($propertyData['value']); $index++) {
 					if (isset($propertyData['value'][$index]['value']['identifier']) && !isset($propertyData['value'][$index]['value']['classname'])) {
-						$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']] = NULL;
-						$objectData['properties'][$propertyName]['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
+						if (!isset($knownObjects[$propertyData['value'][$index]['value']['identifier']])) {
+							$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']] = NULL;
+							$objectData['properties'][$propertyName]['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
+						}
 					}
 				}
 			}
@@ -462,7 +467,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
 		});
 		foreach ($documents->rows as $document) {
-			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc);
+			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
+
 		}
 		return $objectData;
 	}
