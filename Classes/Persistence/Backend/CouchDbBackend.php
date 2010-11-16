@@ -443,34 +443,64 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			'CouchDB_Revision' => $objectData['_rev']
 		);
 		$identifiersToFetch = array();
-		foreach ($objectData['properties'] as $propertyName => $propertyData) {
+
+		$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects);
+
+		$documents = $this->getCouchDbDocuments($identifiersToFetch);
+		foreach ($documents->rows as $document) {
+			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
+		}
+
+		return $objectData;
+	}
+
+	/**
+	 * Process an array of object data properties and add identifiers to fetch
+	 * for recursive processing in nested objects
+	 *
+	 * @param array $properties
+	 * @param array $identifiersToFetch
+	 * @param array $knownObjects
+	 * @return void
+	 */
+	protected function processResultProperties(&$properties, &$identifiersToFetch, &$knownObjects) {
+		foreach ($properties as $propertyName => &$propertyData) {
 			if (!$propertyData['multivalue']) {
 				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {
 					if (!isset($knownObjects[$propertyData['value']['identifier']])) {
 						$identifiersToFetch[$propertyData['value']['identifier']] = NULL;
-						$objectData['properties'][$propertyName]['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
+						$propertyData['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
 					}
+				}
+				if (is_array($propertyData['value']) && isset($propertyData['value']['properties'])) {
+					$this->processResultProperties($propertyData['value']['properties'], $identifiersToFetch, $knownObjects);
 				}
 			} else {
 				for ($index = 0; $index < count($propertyData['value']); $index++) {
 					if (isset($propertyData['value'][$index]['value']['identifier']) && !isset($propertyData['value'][$index]['value']['classname'])) {
 						if (!isset($knownObjects[$propertyData['value'][$index]['value']['identifier']])) {
 							$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']] = NULL;
-							$objectData['properties'][$propertyName]['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
+							$propertyData['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
 						}
+					}
+					if (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties'])) {
+						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects);
 					}
 				}
 			}
 		}
+	}
 
-		$documents = $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
-			return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
+	/**
+	 * Get a list of documents by identifier
+	 *
+	 * @param array $identifiers
+	 * @return array The CouchDB result
+	 */
+	protected function getCouchDbDocuments(&$identifiers) {
+		return $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiers) {
+			return $client->getDocuments(array_keys($identifiers), array('include_docs' => TRUE));
 		});
-		foreach ($documents->rows as $document) {
-			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
-
-		}
-		return $objectData;
 	}
 
 	/**
