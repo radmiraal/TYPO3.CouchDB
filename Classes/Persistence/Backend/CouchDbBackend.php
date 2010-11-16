@@ -444,7 +444,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		);
 		$identifiersToFetch = array();
 
-		$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects);
+		$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
 
 		$documents = $this->getCouchDbDocuments($identifiersToFetch);
 		foreach ($documents->rows as $document) {
@@ -461,30 +461,41 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @param array $properties
 	 * @param array $identifiersToFetch
 	 * @param array $knownObjects
+	 * @param \F3\FLOW3\Reflection\ClassSchema $classSchema
 	 * @return void
 	 */
-	protected function processResultProperties(&$properties, &$identifiersToFetch, &$knownObjects) {
+	protected function processResultProperties(&$properties, &$identifiersToFetch, &$knownObjects, $classSchema) {
 		foreach ($properties as $propertyName => &$propertyData) {
 			if (!$propertyData['multivalue']) {
 				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {
 					if (!isset($knownObjects[$propertyData['value']['identifier']])) {
-						$identifiersToFetch[$propertyData['value']['identifier']] = NULL;
-						$propertyData['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
+						$propertyMetadata = $classSchema->getProperty($propertyName);
+						if ($propertyMetadata['lazy'] !== TRUE) {
+							$identifiersToFetch[$propertyData['value']['identifier']] = NULL;
+							$propertyData['value'] = &$identifiersToFetch[$propertyData['value']['identifier']];
+						} else {
+							$propertyData['value'] = array('identifier' => $propertyData['value']['identifier'], 'classname' => $propertyData['type'], 'properties' => array());
+						}
 					}
 				}
 				if (is_array($propertyData['value']) && isset($propertyData['value']['properties'])) {
-					$this->processResultProperties($propertyData['value']['properties'], $identifiersToFetch, $knownObjects);
+					$this->processResultProperties($propertyData['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value']['classname']]);
 				}
 			} else {
 				for ($index = 0; $index < count($propertyData['value']); $index++) {
 					if (isset($propertyData['value'][$index]['value']['identifier']) && !isset($propertyData['value'][$index]['value']['classname'])) {
 						if (!isset($knownObjects[$propertyData['value'][$index]['value']['identifier']])) {
-							$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']] = NULL;
-							$propertyData['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
+							$propertyMetadata = $classSchema->getProperty($propertyName);
+							if ($propertyMetadata['lazy'] !== TRUE) {
+								$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']] = NULL;
+								$propertyData['value'][$index]['value'] = &$identifiersToFetch[$propertyData['value'][$index]['value']['identifier']];
+							} else {
+								$propertyData['value'][$index]['value'] = array('identifier' => $propertyData['value'][$index]['value']['identifier'], 'classname' => $propertyData['value'][$index]['type'], 'properties' => array());
+							}
 						}
 					}
 					if (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties'])) {
-						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects);
+						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value'][$index]['value']['classname']]);
 					}
 				}
 			}
