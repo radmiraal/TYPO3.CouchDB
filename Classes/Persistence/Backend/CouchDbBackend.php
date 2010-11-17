@@ -35,7 +35,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected $client;
 
 	/**
-	 * @inject
 	 * @var \F3\FLOW3\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
@@ -54,7 +53,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 *
 	 * @var string
 	 */
-	protected $database;
+	protected $databaseName;
 
 	/**
 	 * @var F3\CouchDB\EntityByParentIdentifierView
@@ -75,6 +74,14 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function setDatabase($databaseName) {
 		$this->databaseName = $databaseName;
+	}
+
+	/**
+	 * @param \F3\FLOW3\Object\ObjectManagerInterface $objectManager
+	 * @return void
+	 */
+	public function injectObjectManager(\F3\FLOW3\Object\ObjectManagerInterface $objectManager) {
+		$this->objectManager = $objectManager;
 	}
 
 	/**
@@ -162,6 +169,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	protected function storeObjectDocument($objectData) {
 		$objectData['_id'] = $objectData['identifier'];
+		unset($objectData['identifier']);
 
 		if (isset($objectData['metadata']) && isset($objectData['metadata']['CouchDB_Revision'])) {
 			$objectData['_rev'] = $objectData['metadata']['CouchDB_Revision'];
@@ -172,8 +180,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			$client->createDocument($objectData);
 		});
 
-		return $objectData['identifier'];
-
+		return $objectData['_id'];
 	}
 
 	/**
@@ -438,15 +445,20 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	protected function resultToObjectData($result, &$knownObjects = array()) {
 		$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($result);
-		$knownObjects[$objectData['identifier']] = TRUE;
+		$objectData['identifier'] = $objectData['_id'];
 		$objectData['metadata'] = array(
 			'CouchDB_Revision' => $objectData['_rev']
 		);
+
+		$knownObjects[$objectData['identifier']] = TRUE;
 		$identifiersToFetch = array();
 
 		$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
 
-		$documents = $this->getCouchDbDocuments($identifiersToFetch);
+		$documents = $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
+			return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
+		});
+
 		foreach ($documents->rows as $document) {
 			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
 		}
@@ -500,18 +512,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Get a list of documents by identifier
-	 *
-	 * @param array $identifiers
-	 * @return array The CouchDB result
-	 */
-	protected function getCouchDbDocuments(&$identifiers) {
-		return $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiers) {
-			return $client->getDocuments(array_keys($identifiers), array('include_docs' => TRUE));
-		});
 	}
 
 	/**
