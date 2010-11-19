@@ -245,5 +245,555 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 
 		$result = $backend->_call('storeObjectDocument', $objectData);
 	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function collectPropertiesChecksPropertyValues() {
+		$object = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->any())
+			->method('isDirty')
+			->with($object, 'foo')
+			->will($this->returnValue(FALSE));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('checkPropertyValue', 'flattenValue'));
+		$backend->expects($this->once())->method('checkPropertyValue')->with($object, 'foo', array('type' => 'string', 'metadata' => 'bar'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+
+		$identifier = 'abcdefg';
+		$properties = array(
+			'foo' => array(
+				'type' => 'string',
+				'metadata' => 'bar'
+			)
+		);
+		$dirty = FALSE;
+		$backend->_callRef('collectProperties', $identifier, $object, $properties, $dirty);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function collectPropertiesSetsDirtyReferenceIfPropertyIsDirty() {
+		$object = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->any())
+			->method('isDirty')
+			->with($object, 'foo')
+			->will($this->returnValue(TRUE));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('checkPropertyValue', 'flattenValue'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+
+		$identifier = 'abcdefg';
+		$properties = array(
+			'foo' => array(
+				'type' => 'string',
+				'metadata' => 'bar'
+			)
+		);
+		$dirty = FALSE;
+		$backend->_callRef('collectProperties', $identifier, $object, $properties, $dirty);
+
+		$this->assertTrue($dirty);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function collectPropertiesDoesntSetDirtyReferenceIfNoPropertyIsDirty() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->any())
+			->method('isDirty')
+			->with($mockObject, 'foo')
+			->will($this->returnValue(FALSE));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('checkPropertyValue', 'flattenValue'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+
+		$identifier = 'abcdefg';
+		$properties = array(
+			'foo' => array(
+				'type' => 'string',
+				'metadata' => 'bar'
+			)
+		);
+		$dirty = FALSE;
+		$backend->_callRef('collectProperties', $identifier, $mockObject, $properties, $dirty);
+
+		$this->assertFalse($dirty);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeEntitiesByParentQueriesEntitiesByParentIdentifier() {
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView'));
+
+		$result = new \stdClass();
+		$result->rows = array();
+
+		$mockEntityByParentIdentifierView = $this->getMock('F3\CouchDB\EntityByParentIdentifierView');
+		$backend->expects($this->atLeastOnce())->method('getEntityByParentIdentifierView')->will($this->returnValue($mockEntityByParentIdentifierView));
+		$backend->expects($this->once())->method('queryView')->with($mockEntityByParentIdentifierView, array('parentIdentifier' => 'abcdefg'))->will($this->returnValue($result));
+
+		$backend->_call('removeEntitiesByParent', 'abcdefg');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeEntitiesByParentRemovesNonAggregateRootEntities() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->once())->method('getObjectByIdentifier')->with('xyz')->will($this->returnValue($mockObject));
+
+		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
+		$mockClassSchema->expects($this->any())->method('isAggregateRoot')->will($this->returnValue(FALSE));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+
+		$row = new \stdClass();
+		$row->id = 'xyz';
+		$result = new \stdClass();
+		$result->rows = array($row);
+
+		$mockEntityByParentIdentifierView = $this->getMock('F3\CouchDB\EntityByParentIdentifierView');
+		$backend->expects($this->any())->method('getEntityByParentIdentifierView')->will($this->returnValue($mockEntityByParentIdentifierView));
+		$backend->expects($this->any())->method('queryView')->will($this->returnValue($result));
+
+		$backend->expects($this->once())->method('removeEntity')->with($mockObject);
+
+		$backend->_call('removeEntitiesByParent', 'abcdefg');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeEntitiesByParentDoesNotRemoveAggregateRootEntities() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->once())->method('getObjectByIdentifier')->with('xyz')->will($this->returnValue($mockObject));
+
+		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
+		$mockClassSchema->expects($this->any())->method('isAggregateRoot')->will($this->returnValue(TRUE));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+
+		$row = new \stdClass();
+		$row->id = 'xyz';
+		$result = new \stdClass();
+		$result->rows = array($row);
+
+		$mockEntityByParentIdentifierView = $this->getMock('F3\CouchDB\EntityByParentIdentifierView');
+		$backend->expects($this->any())->method('getEntityByParentIdentifierView')->will($this->returnValue($mockEntityByParentIdentifierView));
+		$backend->expects($this->any())->method('queryView')->will($this->returnValue($result));
+
+		$backend->expects($this->never())->method('removeEntity');
+
+		$backend->_call('removeEntitiesByParent', 'abcdefg');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeEntityDeletesDocumentWithRevisionFromObject() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->once())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('xyz'));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+
+		$backend->expects($this->once())->method('getRevisionByObject')->with($mockObject)->will($this->returnValue('5-revisionid'));
+
+		$mockClient->expects($this->once())->method('deleteDocument')->with('xyz', '5-revisionid');
+
+		$backend->_set('client', $mockClient);
+
+		$backend->_call('removeEntity', $mockObject);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('xyz'));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation', 'removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+
+		$backend->expects($this->once())->method('removeEntitiesByParent')->with('xyz');
+		$backend->expects($this->once())->method('emitRemovedObject')->with($mockObject);
+
+		$backend->_call('removeEntity', $mockObject);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeValueObjectDoesNoOperation() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation'));
+		$backend->expects($this->never())->method('doOperation');
+
+		$backend->_call('removeValueObject', $mockObject);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function processObjectPersistsNestedEntities() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
+
+		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'persistObject'));
+		$backend->expects($this->once())->method('persistObject')->with($mockObject, 'xyz')->will($this->returnValue('abc'));
+		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+
+		$result = $backend->_call('processObject', $mockObject, 'xyz');
+		$this->assertEquals(array(
+			'identifier' => 'abc'
+		), $result);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function processObjectPersistsEntities() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
+
+		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'persistObject'));
+		$backend->expects($this->once())->method('persistObject')->with($mockObject, 'xyz')->will($this->returnValue('abc'));
+		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+
+		$result = $backend->_call('processObject', $mockObject, 'xyz');
+		$this->assertEquals(array(
+			'identifier' => 'abc'
+		), $result);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function processObjectInlinesValueObjects() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
+
+		$properties = array(
+			'foo' => 'options'
+		);
+		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT));
+		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue($properties));
+		$mockClassSchema->expects($this->any())->method('getClassName')->will($this->returnValue($properties));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'collectProperties'));
+		$backend->expects($this->any())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('abc'));
+		$backend->expects($this->once())->method('collectProperties')->with('abc', $mockObject, $properties, FALSE)->will($this->returnValue(array('foo' => 'bar')));
+		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+
+		$result = $backend->_call('processObject', $mockObject, 'xyz');
+		$this->assertEquals(array(
+			'identifier' => 'abc',
+			'classname' => 'TargetClassName',
+			'properties' => array(
+				'foo' => 'bar'
+			)
+		), $result);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getRevisionByObjectCollectsMetadataAndGetsCouchDbRevision() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata'));
+		$backend->expects($this->once())->method('collectMetadata')->with($mockObject)->will($this->returnValue(array('CouchDB_Revision' => '7-revisionid')));
+
+		$result = $backend->_call('getRevisionByObject', $mockObject);
+		$this->assertEquals('7-revisionid', $result);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getRevisionByObjectReturnsNullIfNoRevisionSet() {
+		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata'));
+		$backend->expects($this->once())->method('collectMetadata')->with($mockObject)->will($this->returnValue(NULL));
+
+		$result = $backend->_call('getRevisionByObject', $mockObject);
+		$this->assertEquals(NULL, $result);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function storeViewDoesNothingIfViewExistsAlready() {
+		$mockView = $this->getMock('F3\CouchDB\ViewInterface');
+		$mockView->expects($this->any())->method('getDesignName')->will($this->returnValue('designName'));
+		$mockView->expects($this->any())->method('getViewName')->will($this->returnValue('viewName'));
+
+		$designDocument = new \stdClass();
+		$designDocument->views = new \stdClass();
+		$designDocument->views->viewName = new \stdClass();
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockClient->expects($this->once())->method('getDocument')->with('_design/designName')->will($this->returnValue($designDocument));
+		$mockClient->expects($this->never())->method('createDocument');
+		$mockClient->expects($this->never())->method('updateDocument');
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata'));
+		$backend->_set('client', $mockClient);
+
+		$backend->_call('storeView', $mockView);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function storeViewUpdatesDesignDocumentForNewView() {
+		$mockView = $this->getMock('F3\CouchDB\ViewInterface');
+		$mockView->expects($this->any())->method('getDesignName')->will($this->returnValue('designName'));
+		$mockView->expects($this->any())->method('getViewName')->will($this->returnValue('viewName'));
+		$mockView->expects($this->any())->method('getMapFunctionSource')->will($this->returnValue('function(doc) { doSomething(); }'));
+
+
+		$designDocument = new \stdClass();
+		$designDocument->_id = 'abc';
+		$designDocument->_rev = '2-revisionid';
+		$designDocument->views = new \stdClass();
+
+		$updateDocument = new \stdClass();
+		$updateDocument->_id = 'abc';
+		$updateDocument->_rev = '2-revisionid';
+		$updateDocument->views = new \stdClass();
+		$updateDocument->views->viewName = new \stdClass();
+		$updateDocument->views->viewName->map = 'function(doc) { doSomething(); }';
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockClient->expects($this->once())->method('getDocument')->with('_design/designName')->will($this->returnValue($designDocument));
+		$mockClient->expects($this->once())->method('updateDocument')->with($updateDocument);
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata'));
+		$backend->_set('client', $mockClient);
+
+		$backend->_call('storeView', $mockView);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function storeViewCreatesDesignDocumentIfNotExisting() {
+		$mockView = $this->getMock('F3\CouchDB\ViewInterface');
+		$mockView->expects($this->any())->method('getDesignName')->will($this->returnValue('designName'));
+		$mockView->expects($this->any())->method('getViewName')->will($this->returnValue('viewName'));
+		$mockView->expects($this->any())->method('getMapFunctionSource')->will($this->returnValue('function(doc) { doSomething(); }'));
+		$mockView->expects($this->any())->method('getReduceFunctionSource')->will($this->returnValue('_count'));
+
+		$mockException = $this->getMock('F3\CouchDB\Client\NotFoundException', array(), array(), '', FALSE);
+
+		$createDocument = new \stdClass();
+		$createDocument->_id = '_design/designName';
+		$createDocument->views = new \stdClass();
+		$createDocument->views->viewName = new \stdClass();
+		$createDocument->views->viewName->map = 'function(doc) { doSomething(); }';
+		$createDocument->views->viewName->reduce = '_count';
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockClient->expects($this->once())->method('getDocument')->with('_design/designName')->will($this->throwException($mockException));
+		$mockClient->expects($this->once())->method('createDocument')->with($createDocument);
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata'));
+		$backend->_set('client', $mockClient);
+
+		$backend->_call('storeView', $mockView);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectCountByQueryCreatesAndExecutesQueryViewForCount() {
+		$mockQuery = $this->getMock('F3\FLOW3\Persistence\QueryInterface');
+		$mockQueryView =$this->getMock('F3\CouchDB\QueryView', array(), array(), '', FALSE);
+
+		$mockObjectManager = $this->getMock('F3\FLOW3\Object\ObjectManagerInterface');
+		$mockObjectManager->expects($this->once())->method('create')->with('F3\CouchDB\QueryView', $mockQuery)->will($this->returnValue($mockQueryView));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView'));
+		$backend->injectObjectManager($mockObjectManager);
+
+		$result = new \stdClass();
+		$result->rows = array();
+
+		$backend->expects($this->once())->method('queryView')->with($mockQueryView, array('query' => $mockQuery, 'count' => TRUE))->will($this->returnValue($result));
+
+		$count = $backend->_call('getObjectCountByQuery', $mockQuery);
+		$this->assertEquals(0, $count);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectCountByQueryReturnsValueOfCount() {
+		$mockQuery = $this->getMock('F3\FLOW3\Persistence\QueryInterface');
+		$mockQueryView =$this->getMock('F3\CouchDB\QueryView', array(), array(), '', FALSE);
+
+		$mockObjectManager = $this->getMock('F3\FLOW3\Object\ObjectManagerInterface');
+		$mockObjectManager->expects($this->any())->method('create')->will($this->returnValue($mockQueryView));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView'));
+		$backend->injectObjectManager($mockObjectManager);
+
+		$row = new \stdClass();
+		$row->value = 42;
+		$result = new \stdClass();
+		$result->rows = array($row);
+
+		$backend->expects($this->any())->method('queryView')->will($this->returnValue($result));
+
+		$count = $backend->_call('getObjectCountByQuery', $mockQuery);
+		$this->assertEquals(42, $count);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectDataByIdentifierGetsDocumentAndCallsResultToObjectData() {
+		$document = new \stdClass();
+		$document->_id = 'xyz';
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockClient->expects($this->once())->method('getDocument')->with('xyz')->will($this->returnValue($document));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('resultToObjectData'));
+		$backend->_set('client', $mockClient);
+
+		$backend->expects($this->once())->method('resultToObjectData')->with($document)->will($this->returnValue(array('identifier' => 'xyz')));
+
+		$objectData = $backend->getObjectDataByIdentifier('xyz');
+		$this->assertEquals(array('identifier' => 'xyz'), $objectData);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \F3\FLOW3\Persistence\Exception\UnknownObjectException
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectDataByIdentifierThrowsExceptionIfDocumentDoesntExist() {
+		$document = new \stdClass();
+		$document->_id = 'xyz';
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockClient->expects($this->once())->method('getDocument')->with('xyz')->will($this->returnValue(NULL));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('resultToObjectData'));
+		$backend->_set('client', $mockClient);
+
+		$backend->getObjectDataByIdentifier('xyz');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectDataByQueryQueriesViewAndProcessesRows() {
+		$row = new \stdClass();
+		$row->value = new \stdClass();
+		$row->value->_id = 'xyz';
+
+		$result = new \stdClass();
+		$result->rows = array($row);
+
+		$mockQuery = $this->getMock('F3\FLOW3\Persistence\QueryInterface');
+		$mockQueryView =$this->getMock('F3\CouchDB\QueryView', array(), array(), '', FALSE);
+
+		$mockObjectManager = $this->getMock('F3\FLOW3\Object\ObjectManagerInterface');
+		$mockObjectManager->expects($this->any())->method('create')->will($this->returnValue($mockQueryView));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'resultToObjectData'));
+		$backend->injectObjectManager($mockObjectManager);
+
+		$backend->expects($this->once())->method('queryView')->with($mockQueryView)->will($this->returnValue($result));
+		$backend->expects($this->once())->method('resultToObjectData')->with($row->value)->will($this->returnValue(array('identifier' => 'xyz')));
+
+		$objectDataArray = $backend->getObjectDataByQuery($mockQuery);
+		$this->assertEquals(array(array('identifier' => 'xyz')), $objectDataArray);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function queryViewQueriesViewWithViewMethods() {
+		$mockView = $this->getMock('F3\CouchDB\ViewInterface');
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+
+		$result = new \stdClass();
+		$result->rows = array();
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('resultToObjectData'));
+		$backend->_set('client', $mockClient);
+
+		$mockView->expects($this->once())->method('getDesignName')->will($this->returnValue('designName'));
+		$mockView->expects($this->once())->method('getViewName')->will($this->returnValue('viewName'));
+		$mockView->expects($this->once())->method('buildViewParameters')->with(array('argument' => 'value'))->will($this->returnValue(array('param' => 'foo')));
+		$mockClient->expects($this->once())->method('queryView')->with('designName', 'viewName', array('param' => 'foo'))->will($this->returnValue($result));
+
+
+		$viewResult = $backend->queryView($mockView, array('argument' => 'value'));
+		$this->assertEquals($result, $viewResult);
+	}
 }
 ?>

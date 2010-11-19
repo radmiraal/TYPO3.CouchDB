@@ -261,7 +261,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Remove a value object
+	 * Remove a value object. Does nothing for CouchDB, since value objects
+	 * are embedded in documents.
 	 *
 	 * @param object $object
 	 * @return void
@@ -269,24 +270,27 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected function removeValueObject($object) {}
 
 	/**
+	 * Process object data for an object
+	 *
 	 * @param \F3\FLOW3\AOP\ProxyInterface $object
-	 * @param string $identifier
-	 * @return array
+	 * @param string $parentIdentifier
+	 * @return array The object data for the given object
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	protected function processObject(\F3\FLOW3\AOP\ProxyInterface $object, $identifier) {
-		$classSchema = $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()];
-		$valueIdentifier = $this->getIdentifierFromObject($object);
+	protected function processObject(\F3\FLOW3\AOP\ProxyInterface $object, $parentIdentifier) {
+		$className = $object->FLOW3_AOP_Proxy_getProxyTargetClassName();
+		$classSchema = $this->classSchemata[$className];
 		if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
+			$valueIdentifier = $this->getIdentifierByObject($object);
 			$noDirtyOnValueObject = FALSE;
 			return array(
 				'identifier' => $valueIdentifier,
-				'classname' => $classSchema->getClassName(),
+				'classname' => $className,
 				'properties' => $this->collectProperties($valueIdentifier, $object, $classSchema->getProperties(), $noDirtyOnValueObject)
 			);
 		} else {
 			return array(
-				'identifier' => $this->persistObject($object, $identifier)
+				'identifier' => $this->persistObject($object, $parentIdentifier)
 			);
 		}
 	}
@@ -307,7 +311,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Store a view inside CouchDB if it is not yet defined
+	 * Store a view inside CouchDB if it is not yet defined. Creates the
+	 * design document on the fly if it does not exist already.
 	 *
 	 * @param \F3\CouchDB\ViewInterface $view
 	 * @return void
@@ -322,13 +327,10 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			if (isset($design->views->{$view->getViewName()})) {
 				return;
 			}
-		} catch(\F3\CouchDB\Client\ClientException $e) {
-			$information = $e->getInformation();
-			if ($information['error'] === 'not_found' && $information['reason'] === 'missing') {
-				$design = new \stdClass();
-				$design->_id = '_design/' . $view->getDesignName();
-				$design->views = new \stdClass();
-			}
+		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
+			$design = new \stdClass();
+			$design->_id = '_design/' . $view->getDesignName();
+			$design->views = new \stdClass();
 		}
 
 		$design->views->{$view->getViewName()} = new \stdClass();
@@ -356,10 +358,10 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	public function getObjectCountByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
 		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
 		$result = $this->queryView($view, array('query' => $query, 'count' => TRUE));
-		if (is_array($result->rows)) {
+		if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
 			return (count($result->rows) === 1) ? $result->rows[0]->value : 0;
 		} else {
-			throw new \Exception('Could not get count', 1287074016);
+			throw new \F3\CouchDB\InvalidResultException('Could not get count from result', 1287074016, NULL, $result);
 		}
 	}
 
@@ -380,7 +382,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		}
 		return $this->resultToObjectData($doc);
 	}
-
 
 	/**
 	 * Returns the object data matching the $query.
@@ -421,14 +422,14 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 *
 	 * @param ViewInterface $view
 	 * @param array $arguments
-	 * @return array The results of the view
+	 * @return object The results of the view
 	 */
 	public function queryView(\F3\CouchDB\ViewInterface $view, $arguments) {
 		$that = $this;
 		return $this->doOperation(function($client) use ($view, &$arguments, $that) {
 			try {
 				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
-			} catch(\F3\CouchDB\Client\NotFoundException $e) {
+			} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
 				$that->storeView($view);
 				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
 			}
@@ -439,7 +440,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * Process a CouchDB result and add metadata and process
 	 * object values by loading objects.
 	 *
-	 * @param array $result The raw document from CouchDB
+	 * @param object $result The raw document from CouchDB
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -524,8 +525,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected function doOperation(\Closure $couchDbOperation) {
 		try {
 			return $couchDbOperation($this->client);
-		} catch(\F3\CouchDB\Client\ClientException $e) {
-			$information = $e->getInformation();
+		} catch(\F3\CouchDB\Client\ClientException $clientException) {
+			$information = $clientException->getInformation();
 			if ($information['error'] === 'not_found' && $information['reason'] === 'no_db_file') {
 				if ($this->client->createDatabase($this->databaseName)) {
 					return $this->doOperation($couchDbOperation);
@@ -533,7 +534,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 					throw new \F3\FLOW3\Persistence\Exception('Could not create database ' . $this->database, 1286901880);
 				}
 			} else {
-				throw $e;
+				throw $clientException;
 			}
 		}
 	}
