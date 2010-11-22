@@ -450,18 +450,29 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$objectData['metadata'] = array(
 			'CouchDB_Revision' => $objectData['_rev']
 		);
+		unset($objectData['_id']);
+		unset($objectData['_rev']);
 
 		$knownObjects[$objectData['identifier']] = TRUE;
 		$identifiersToFetch = array();
 
+		if (!isset($objectData['classname'])) {
+			throw new \F3\CouchDB\InvalidResultException('Expected property "classname" in document', 1290442039, NULL, $result);
+		}
+		if (!isset($this->classSchemata[$objectData['classname']])) {
+			throw new \F3\CouchDB\InvalidResultException('Class "' . $objectData['classname'] . '" was not registered', 1290442092, NULL, $result);
+		}
+
 		$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
 
-		$documents = $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
-			return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
-		});
+		if (count($identifiersToFetch) > 0) {
+			$documents = $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
+				return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
+			});
 
-		foreach ($documents->rows as $document) {
-			$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
+			foreach ($documents->rows as $document) {
+				$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
+			}
 		}
 
 		return $objectData;
@@ -490,8 +501,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 							$propertyData['value'] = array('identifier' => $propertyData['value']['identifier'], 'classname' => $propertyData['type'], 'properties' => array());
 						}
 					}
-				}
-				if (is_array($propertyData['value']) && isset($propertyData['value']['properties'])) {
+				} elseif (is_array($propertyData['value']) && isset($propertyData['value']['properties'])) {
 					$this->processResultProperties($propertyData['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value']['classname']]);
 				}
 			} else {
@@ -506,8 +516,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 								$propertyData['value'][$index]['value'] = array('identifier' => $propertyData['value'][$index]['value']['identifier'], 'classname' => $propertyData['value'][$index]['type'], 'properties' => array());
 							}
 						}
-					}
-					if (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties'])) {
+					} elseif (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties'])) {
 						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value'][$index]['value']['classname']]);
 					}
 				}

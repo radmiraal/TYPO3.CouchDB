@@ -795,5 +795,271 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$viewResult = $backend->queryView($mockView, array('argument' => 'value'));
 		$this->assertEquals($result, $viewResult);
 	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function resultToObjectDataConvertsObjectToArrayAndSetsIdentifierRevisionAndProperties() {
+		$result = new \stdClass();
+		$result->_id = 'abcdefg';
+		$result->_rev = '3-revisionid';
+		$result->properties = new \stdClass();
+		$result->properties->foo = new \stdClass();
+		$result->properties->foo->multivalue = FALSE;
+		$result->properties->foo->value = 'Bar';
+		$result->properties->foo->type = 'string';
+		$result->classname = 'FooBar';
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
+		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$backend->_set('classSchemata', array('FooBar' => $mockClassSchema));
+
+		$objectData = array(
+			'identifier' => 'abcdefg',
+			'classname' => 'FooBar',
+			'metadata' => array(
+				'CouchDB_Revision' => '3-revisionid'
+			),
+			'properties' => array(
+				'foo' => array(
+					'multivalue' => FALSE,
+					'type' => 'string',
+					'value' => 'Bar'
+				)
+			)
+		);
+		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function resultToObjectDataFetchesNestedSinglevalueEntities() {
+		$result = new \stdClass();
+		$result->_id = 'abcdefg';
+		$result->_rev = '3-revisionid';
+		$result->properties = new \stdClass();
+		$result->properties->foo = new \stdClass();
+		$result->properties->foo->multivalue = FALSE;
+		$result->properties->foo->type = 'BarBaz';
+		$result->properties->foo->value = new \stdClass();
+		$result->properties->foo->value->identifier = 'xyz';
+		$result->classname = 'FooBar';
+
+		$nestedResult = new \stdClass();
+		$nestedResult->_id = 'xyz';
+		$nestedResult->_rev = '2-revisionid';
+		$nestedResult->classname = 'BarBaz';
+		$nestedResult->properties = new \stdClass();
+		$nestedResult->properties->bar = new \stdClass();
+		$nestedResult->properties->bar->multivalue = FALSE;
+		$nestedResult->properties->bar->type = 'string';
+		$nestedResult->properties->bar->value = 'Bar';
+		$nestedDoc = new \stdClass();
+		$nestedDoc->id = 'xyz';
+		$nestedDoc->doc = $nestedResult;
+		$nestedResults = new \stdClass();
+		$nestedResults->rows = array($nestedDoc);
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
+		$mockClassSchemaFooBar = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaBarBaz = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
+		$backend->_set('client', $mockClient);
+
+		$mockClient->expects($this->once())->method('getDocuments')->with(array('xyz'), array('include_docs' => TRUE))->will($this->returnValue($nestedResults));
+
+		$objectData = array(
+			'identifier' => 'abcdefg',
+			'classname' => 'FooBar',
+			'metadata' => array(
+				'CouchDB_Revision' => '3-revisionid'
+			),
+			'properties' => array(
+				'foo' => array(
+					'multivalue' => FALSE,
+					'type' => 'BarBaz',
+					'value' => array(
+						'identifier' => 'xyz',
+						'metadata' => array(
+							'CouchDB_Revision' => '2-revisionid'
+						),
+						'classname' => 'BarBaz',
+						'properties' => array(
+							'bar' => array(
+								'multivalue' => FALSE,
+								'type' => 'string',
+								'value' => 'Bar'
+							)
+						)
+					)
+				)
+			)
+		);
+		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function resultToObjectDataFetchesNestedMultivalueEntities() {
+		$result = new \stdClass();
+		$result->_id = 'abcdefg';
+		$result->_rev = '3-revisionid';
+		$result->properties = new \stdClass();
+		$result->properties->foo = new \stdClass();
+		$result->properties->foo->multivalue = TRUE;
+		$result->properties->foo->type = 'array';
+		$fooValue = new \stdClass();
+		$fooValue->type = 'BarBaz';
+		$fooValue->index = 0;
+		$fooValue->value = new \stdClass();
+		$fooValue->value->identifier = 'xyz';
+		$result->properties->foo->value = array($fooValue);
+		$result->classname = 'FooBar';
+
+		$nestedResult = new \stdClass();
+		$nestedResult->_id = 'xyz';
+		$nestedResult->_rev = '2-revisionid';
+		$nestedResult->classname = 'BarBaz';
+		$nestedResult->properties = new \stdClass();
+		$nestedResult->properties->bar = new \stdClass();
+		$nestedResult->properties->bar->multivalue = FALSE;
+		$nestedResult->properties->bar->type = 'string';
+		$nestedResult->properties->bar->value = 'Bar';
+		$nestedDoc = new \stdClass();
+		$nestedDoc->id = 'xyz';
+		$nestedDoc->doc = $nestedResult;
+		$nestedResults = new \stdClass();
+		$nestedResults->rows = array($nestedDoc);
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
+		$mockClassSchemaFooBar = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaBarBaz = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
+		$backend->_set('client', $mockClient);
+
+		$mockClient->expects($this->once())->method('getDocuments')->with(array('xyz'), array('include_docs' => TRUE))->will($this->returnValue($nestedResults));
+
+		$objectData = array(
+			'identifier' => 'abcdefg',
+			'classname' => 'FooBar',
+			'metadata' => array(
+				'CouchDB_Revision' => '3-revisionid'
+			),
+			'properties' => array(
+				'foo' => array(
+					'multivalue' => TRUE,
+					'type' => 'array',
+					'value' => array(
+						array(
+							'type' => 'BarBaz',
+							'index' => 0,
+							'value' => array(
+								'identifier' => 'xyz',
+								'classname' => 'BarBaz',
+								'metadata' => array(
+									'CouchDB_Revision' => '2-revisionid'
+								),
+								'properties' => array(
+									'bar' => array(
+										'multivalue' => FALSE,
+										'type' => 'string',
+										'value' => 'Bar'
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+		);
+		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function resultToObjectDataProcessesLazyProperties() {
+		$result = new \stdClass();
+		$result->_id = 'abcdefg';
+		$result->_rev = '3-revisionid';
+		$result->properties = new \stdClass();
+		$result->properties->foo = new \stdClass();
+		$result->properties->foo->multivalue = TRUE;
+		$result->properties->foo->type = 'array';
+		$fooValue = new \stdClass();
+		$fooValue->type = 'BarBaz';
+		$fooValue->index = 0;
+		$fooValue->value = new \stdClass();
+		$fooValue->value->identifier = 'xyz';
+		$result->properties->foo->value = array($fooValue);
+		$result->properties->bar = new \stdClass();
+		$result->properties->bar->multivalue = FALSE;
+		$result->properties->bar->type = 'BarBaz';
+		$result->properties->bar->value = new \stdClass();
+		$result->properties->bar->value->identifier = 'xyz';
+		$result->classname = 'FooBar';
+
+		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
+		$mockClassSchemaFooBar = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaBarBaz = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
+		$backend->_set('client', $mockClient);
+
+		$mockClassSchemaFooBar->expects($this->any())->method('getProperty')->will($this->returnValue(array('lazy' => TRUE)));
+		$mockClient->expects($this->never())->method('getDocuments');
+
+		$objectData = array(
+			'identifier' => 'abcdefg',
+			'classname' => 'FooBar',
+			'metadata' => array(
+				'CouchDB_Revision' => '3-revisionid'
+			),
+			'properties' => array(
+				'foo' => array(
+					'multivalue' => TRUE,
+					'type' => 'array',
+					'value' => array(
+						array(
+							'type' => 'BarBaz',
+							'index' => 0,
+							'value' => array(
+								'identifier' => 'xyz',
+								'classname' => 'BarBaz',
+								'properties' => array()
+							)
+						)
+					)
+				),
+				'bar' => array(
+					'multivalue' => FALSE,
+					'type' => 'BarBaz',
+					'value' => array(
+						'identifier' => 'xyz',
+						'classname' => 'BarBaz',
+						'properties' => array()
+					)
+				)
+			)
+		);
+		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function resultToObjectDataProcessesEntitiesInNestedValueObjects() {
+		$this->markTestIncomplete('Not implemented');
+	}
+
 }
 ?>
