@@ -374,13 +374,18 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @todo Maybe introduce a ObjectNotFound exception?
 	 */
 	public function getObjectDataByIdentifier($identifier) {
-		$doc = $this->doOperation(function($client) use ($identifier) {
-			return $client->getDocument($identifier);
-		});
+		try {
+			$doc = $this->doOperation(function($client) use ($identifier) {
+				return $client->getDocument($identifier);
+			});
+		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
+			$doc = NULL;
+		}
 		if ($doc === NULL) {
 			throw new \F3\FLOW3\Persistence\Exception\UnknownObjectException('Unknown object with identifier ' . $identifier, 1286902479);
 		}
-		return $this->resultToObjectData($doc);
+		$data = $this->documentsToObjectData(array($doc));
+		return $data[0];
 	}
 
 	/**
@@ -407,13 +412,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, $arguments) {
 		$result = $this->queryView($view, $arguments);
-		$data = array();
 		if ($result !== NULL) {
-			foreach ($result->rows as $row) {
-				$data[] = $this->resultToObjectData($row->value !== NULL ? $row->value : $row->doc);
-			}
+			return $this->documentsToObjectData($this->resultToDocuments($result));
+		} else {
+			return array();
 		}
-		return $data;
 	}
 
 	/**
@@ -437,45 +440,52 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Process a CouchDB result and add metadata and process
-	 * object values by loading objects.
+	 * Process a CouchDB results, add metadata and process
+	 * object values by loading objects. This method processes documents
+	 * batched for loading nested entities.
 	 *
-	 * @param object $result The raw document from CouchDB
-	 * @return array
+	 * @param array $documents Documents as objects
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function resultToObjectData($result, &$knownObjects = array()) {
-		$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($result);
-		$objectData['identifier'] = $objectData['_id'];
-		$objectData['metadata'] = array(
-			'CouchDB_Revision' => $objectData['_rev']
-		);
-		unset($objectData['_id']);
-		unset($objectData['_rev']);
-
-		$knownObjects[$objectData['identifier']] = TRUE;
+	protected function documentsToObjectData($documents, &$knownObjects = array()) {
 		$identifiersToFetch = array();
+		$data = array();
+		foreach ($documents as $document) {
+			$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($document);
+			$objectData['identifier'] = $objectData['_id'];
+			$objectData['metadata'] = array(
+				'CouchDB_Revision' => $objectData['_rev']
+			);
+			unset($objectData['_id']);
+			unset($objectData['_rev']);
 
-		if (!isset($objectData['classname'])) {
-			throw new \F3\CouchDB\InvalidResultException('Expected property "classname" in document', 1290442039, NULL, $result);
-		}
-		if (!isset($this->classSchemata[$objectData['classname']])) {
-			throw new \F3\CouchDB\InvalidResultException('Class "' . $objectData['classname'] . '" was not registered', 1290442092, NULL, $result);
-		}
+			$knownObjects[$objectData['identifier']] = TRUE;
 
-		$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
+			if (!isset($objectData['classname'])) {
+				throw new \F3\CouchDB\InvalidResultException($result, 'Expected property "classname" in document', 1290442039);
+			}
+			if (!isset($this->classSchemata[$objectData['classname']])) {
+				throw new \F3\CouchDB\InvalidResultException($result, 'Class "' . $objectData['classname'] . '" was not registered', 1290442092);
+			}
+
+			$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
+
+			$data[] = $objectData;
+		}
 
 		if (count($identifiersToFetch) > 0) {
-			$documents = $this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
+			$documents = $this->resultToDocuments($this->doOperation(function(\F3\CouchDB\Client $client) use ($identifiersToFetch) {
 				return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
-			});
+			}));
 
-			foreach ($documents->rows as $document) {
-				$identifiersToFetch[$document->id] = $this->resultToObjectData($document->doc, $knownObjects);
+			$fetchedObjectsData = $this->documentsToObjectData($documents, $knownObjects);
+
+			foreach ($fetchedObjectsData as $fetchedObjectData) {
+				$identifiersToFetch[$fetchedObjectData['identifier']] = $fetchedObjectData;
 			}
 		}
 
-		return $objectData;
+		return $data;
 	}
 
 	/**
@@ -522,6 +532,22 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Convert a CouchDB result to an array of documents
+	 *
+	 * @param object $result
+	 * @return array
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function resultToDocuments($result) {
+		if (!isset($result->rows)) {
+			throw new \F3\CouchDB\InvalidResultException($result, 'Expected property "rows" in result', 1290693732);
+		}
+		return array_map(function($row) {
+			return isset($row->doc) && $row->doc !== NULL ? $row->doc : $row->value;
+		}, $result->rows);
 	}
 
 	/**

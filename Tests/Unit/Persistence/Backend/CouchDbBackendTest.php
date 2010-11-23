@@ -717,10 +717,10 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 		$mockClient->expects($this->once())->method('getDocument')->with('xyz')->will($this->returnValue($document));
 
-		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('resultToObjectData'));
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('documentsToObjectData'));
 		$backend->_set('client', $mockClient);
 
-		$backend->expects($this->once())->method('resultToObjectData')->with($document)->will($this->returnValue(array('identifier' => 'xyz')));
+		$backend->expects($this->once())->method('documentsToObjectData')->with(array($document))->will($this->returnValue(array(array('identifier' => 'xyz'))));
 
 		$objectData = $backend->getObjectDataByIdentifier('xyz');
 		$this->assertEquals(array('identifier' => 'xyz'), $objectData);
@@ -738,7 +738,7 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 		$mockClient->expects($this->once())->method('getDocument')->with('xyz')->will($this->returnValue(NULL));
 
-		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('resultToObjectData'));
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('documentsToObjectData'));
 		$backend->_set('client', $mockClient);
 
 		$backend->getObjectDataByIdentifier('xyz');
@@ -762,11 +762,11 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$mockObjectManager = $this->getMock('F3\FLOW3\Object\ObjectManagerInterface');
 		$mockObjectManager->expects($this->any())->method('create')->will($this->returnValue($mockQueryView));
 
-		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'resultToObjectData'));
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'documentsToObjectData'));
 		$backend->injectObjectManager($mockObjectManager);
 
 		$backend->expects($this->once())->method('queryView')->with($mockQueryView)->will($this->returnValue($result));
-		$backend->expects($this->once())->method('resultToObjectData')->with($row->value)->will($this->returnValue(array('identifier' => 'xyz')));
+		$backend->expects($this->once())->method('documentsToObjectData')->with(array($row->value))->will($this->returnValue(array(array('identifier' => 'xyz'))));
 
 		$objectDataArray = $backend->getObjectDataByQuery($mockQuery);
 		$this->assertEquals(array(array('identifier' => 'xyz')), $objectDataArray);
@@ -783,7 +783,7 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$result = new \stdClass();
 		$result->rows = array();
 
-		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('resultToObjectData'));
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('documentsToObjectData'));
 		$backend->_set('client', $mockClient);
 
 		$mockView->expects($this->once())->method('getDesignName')->will($this->returnValue('designName'));
@@ -800,16 +800,16 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function resultToObjectDataConvertsObjectToArrayAndSetsIdentifierRevisionAndProperties() {
-		$result = new \stdClass();
-		$result->_id = 'abcdefg';
-		$result->_rev = '3-revisionid';
-		$result->properties = new \stdClass();
-		$result->properties->foo = new \stdClass();
-		$result->properties->foo->multivalue = FALSE;
-		$result->properties->foo->value = 'Bar';
-		$result->properties->foo->type = 'string';
-		$result->classname = 'FooBar';
+	public function documentsToObjectDataConvertsObjectToArrayAndSetsIdentifierRevisionAndProperties() {
+		$document = new \stdClass();
+		$document->_id = 'abcdefg';
+		$document->_rev = '3-revisionid';
+		$document->properties = new \stdClass();
+		$document->properties->foo = new \stdClass();
+		$document->properties->foo->multivalue = FALSE;
+		$document->properties->foo->value = 'Bar';
+		$document->properties->foo->type = 'string';
+		$document->classname = 'FooBar';
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
@@ -829,24 +829,24 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 				)
 			)
 		);
-		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+		$this->assertEquals(array($objectData), $backend->_call('documentsToObjectData', array($document)));
 	}
 
 	/**
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function resultToObjectDataFetchesNestedSinglevalueEntities() {
-		$result = new \stdClass();
-		$result->_id = 'abcdefg';
-		$result->_rev = '3-revisionid';
-		$result->properties = new \stdClass();
-		$result->properties->foo = new \stdClass();
-		$result->properties->foo->multivalue = FALSE;
-		$result->properties->foo->type = 'BarBaz';
-		$result->properties->foo->value = new \stdClass();
-		$result->properties->foo->value->identifier = 'xyz';
-		$result->classname = 'FooBar';
+	public function documentsToObjectDataFetchesNestedSinglevalueEntities() {
+		$document = new \stdClass();
+		$document->_id = 'abcdefg';
+		$document->_rev = '3-revisionid';
+		$document->properties = new \stdClass();
+		$document->properties->foo = new \stdClass();
+		$document->properties->foo->multivalue = FALSE;
+		$document->properties->foo->type = 'BarBaz';
+		$document->properties->foo->value = new \stdClass();
+		$document->properties->foo->value->identifier = 'xyz';
+		$document->classname = 'FooBar';
 
 		$nestedResult = new \stdClass();
 		$nestedResult->_id = 'xyz';
@@ -899,28 +899,28 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 				)
 			)
 		);
-		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+		$this->assertEquals(array($objectData), $backend->_call('documentsToObjectData', array($document)));
 	}
 
 	/**
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function resultToObjectDataFetchesNestedMultivalueEntities() {
-		$result = new \stdClass();
-		$result->_id = 'abcdefg';
-		$result->_rev = '3-revisionid';
-		$result->properties = new \stdClass();
-		$result->properties->foo = new \stdClass();
-		$result->properties->foo->multivalue = TRUE;
-		$result->properties->foo->type = 'array';
+	public function documentsToObjectDataFetchesNestedMultivalueEntities() {
 		$fooValue = new \stdClass();
 		$fooValue->type = 'BarBaz';
 		$fooValue->index = 0;
 		$fooValue->value = new \stdClass();
 		$fooValue->value->identifier = 'xyz';
-		$result->properties->foo->value = array($fooValue);
-		$result->classname = 'FooBar';
+		$document = new \stdClass();
+		$document->_id = 'abcdefg';
+		$document->_rev = '3-revisionid';
+		$document->properties = new \stdClass();
+		$document->properties->foo = new \stdClass();
+		$document->properties->foo->multivalue = TRUE;
+		$document->properties->foo->type = 'array';
+		$document->properties->foo->value = array($fooValue);
+		$document->classname = 'FooBar';
 
 		$nestedResult = new \stdClass();
 		$nestedResult->_id = 'xyz';
@@ -979,33 +979,33 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 				)
 			)
 		);
-		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+		$this->assertEquals(array($objectData), $backend->_call('documentsToObjectData', array($document)));
 	}
 
 	/**
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function resultToObjectDataProcessesLazyProperties() {
-		$result = new \stdClass();
-		$result->_id = 'abcdefg';
-		$result->_rev = '3-revisionid';
-		$result->properties = new \stdClass();
-		$result->properties->foo = new \stdClass();
-		$result->properties->foo->multivalue = TRUE;
-		$result->properties->foo->type = 'array';
+	public function documentsToObjectDataProcessesLazyProperties() {
 		$fooValue = new \stdClass();
 		$fooValue->type = 'BarBaz';
 		$fooValue->index = 0;
 		$fooValue->value = new \stdClass();
 		$fooValue->value->identifier = 'xyz';
-		$result->properties->foo->value = array($fooValue);
-		$result->properties->bar = new \stdClass();
-		$result->properties->bar->multivalue = FALSE;
-		$result->properties->bar->type = 'BarBaz';
-		$result->properties->bar->value = new \stdClass();
-		$result->properties->bar->value->identifier = 'xyz';
-		$result->classname = 'FooBar';
+		$document = new \stdClass();
+		$document->_id = 'abcdefg';
+		$document->_rev = '3-revisionid';
+		$document->properties = new \stdClass();
+		$document->properties->foo = new \stdClass();
+		$document->properties->foo->multivalue = TRUE;
+		$document->properties->foo->type = 'array';
+		$document->properties->foo->value = array($fooValue);
+		$document->properties->bar = new \stdClass();
+		$document->properties->bar->multivalue = FALSE;
+		$document->properties->bar->type = 'BarBaz';
+		$document->properties->bar->value = new \stdClass();
+		$document->properties->bar->value->identifier = 'xyz';
+		$document->classname = 'FooBar';
 
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
@@ -1050,7 +1050,7 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 				)
 			)
 		);
-		$this->assertEquals($objectData, $backend->_call('resultToObjectData', $result));
+		$this->assertEquals(array($objectData), $backend->_call('documentsToObjectData', array($document)));
 	}
 
 	/**
