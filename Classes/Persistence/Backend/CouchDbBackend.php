@@ -167,7 +167,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @todo Catch exceptions for conflicts when updating the document
 	 * @todo (Later) Try to use an update handler inside CouchDB for partial updates
 	 */
-	protected function storeObjectDocument($objectData) {
+	protected function storeObjectDocument(array $objectData) {
 		$objectData['_id'] = $objectData['identifier'];
 		unset($objectData['identifier']);
 
@@ -200,12 +200,6 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		foreach ($properties as $propertyName => $propertyMetaData) {
 			$this->checkPropertyValue($object, $propertyName, $propertyMetaData);
 			$propertyValue = $object->FLOW3_AOP_Proxy_getProperty($propertyName);
-
-			if ($propertyMetaData['type'] === 'object') {
-				$propertyType = $propertyValue->FLOW3_AOP_Proxy_getProxyTargetClassName();
-			} else {
-				$propertyType = $propertyMetaData['type'];
-			}
 
 			if ($this->persistenceSession->isDirty($object, $propertyName)) {
 				$dirty = TRUE;
@@ -410,7 +404,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @return array Array of object data
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, $arguments) {
+	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, array $arguments) {
 		$result = $this->queryView($view, $arguments);
 		if ($result !== NULL) {
 			return $this->documentsToObjectData($this->resultToDocuments($result));
@@ -423,11 +417,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * "Execute" a view with the given arguments, these are view specific. The
 	 * view will be stored in CouchDB if it is not yet defined.
 	 *
-	 * @param ViewInterface $view
+	 * @param \F3\CouchDB\ViewInterface $view
 	 * @param array $arguments
 	 * @return object The results of the view
 	 */
-	public function queryView(\F3\CouchDB\ViewInterface $view, $arguments) {
+	public function queryView(\F3\CouchDB\ViewInterface $view, array $arguments) {
 		$that = $this;
 		return $this->doOperation(function($client) use ($view, &$arguments, $that) {
 			try {
@@ -440,14 +434,16 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
-	 * Process a CouchDB results, add metadata and process
-	 * object values by loading objects. This method processes documents
+	 * Process CouchDB results, add metadata and process object
+	 * values by loading objects. This method processes documents
 	 * batched for loading nested entities.
 	 *
 	 * @param array $documents Documents as objects
+	 * @param array &$knownObjects
+	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function documentsToObjectData($documents, &$knownObjects = array()) {
+	protected function documentsToObjectData(array $documents, array &$knownObjects = array()) {
 		$identifiersToFetch = array();
 		$data = array();
 		foreach ($documents as $document) {
@@ -462,10 +458,10 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			$knownObjects[$objectData['identifier']] = TRUE;
 
 			if (!isset($objectData['classname'])) {
-				throw new \F3\CouchDB\InvalidResultException($result, 'Expected property "classname" in document', 1290442039);
+				throw new \F3\CouchDB\InvalidResultException('Expected property "classname" in document', 1290442039, NULL, $document);
 			}
 			if (!isset($this->classSchemata[$objectData['classname']])) {
-				throw new \F3\CouchDB\InvalidResultException($result, 'Class "' . $objectData['classname'] . '" was not registered', 1290442092);
+				throw new \F3\CouchDB\InvalidResultException('Class "' . $objectData['classname'] . '" was not registered', 1290442092, NULL, $document);
 			}
 
 			$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
@@ -492,13 +488,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * Process an array of object data properties and add identifiers to fetch
 	 * for recursive processing in nested objects
 	 *
-	 * @param array $properties
-	 * @param array $identifiersToFetch
-	 * @param array $knownObjects
+	 * @param array &$properties
+	 * @param array &$identifiersToFetch
+	 * @param array &$knownObjects
 	 * @param \F3\FLOW3\Reflection\ClassSchema $classSchema
 	 * @return void
 	 */
-	protected function processResultProperties(&$properties, &$identifiersToFetch, &$knownObjects, $classSchema) {
+	protected function processResultProperties(array &$properties, array &$identifiersToFetch, array &$knownObjects, \F3\FLOW3\Reflection\ClassSchema $classSchema) {
 		foreach ($properties as $propertyName => &$propertyData) {
 			if (!$propertyData['multivalue']) {
 				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {
@@ -543,7 +539,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	protected function resultToDocuments($result) {
 		if (!isset($result->rows)) {
-			throw new \F3\CouchDB\InvalidResultException($result, 'Expected property "rows" in result', 1290693732);
+			throw new \F3\CouchDB\InvalidResultException('Expected property "rows" in result', 1290693732, NULL, $result);
 		}
 		return array_map(function($row) {
 			return isset($row->doc) && $row->doc !== NULL ? $row->doc : $row->value;
