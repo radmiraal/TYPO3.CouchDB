@@ -276,6 +276,35 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 	}
 
 	/**
+	 * @test
+	 */
+	public function nestedEntitiesInValueObjectsAreReconstructed() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Entity with valueobject with reference');
+		$nestedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$nestedEntity->setName('Nested entity');
+		$relatedValueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference', $nestedEntity);
+		$entity->setRelatedValueObjectWithReference($relatedValueObject);
+
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$object = $repository->findOneByName('Entity with valueobject with reference');
+
+		$restoredValueObject = $object->getRelatedValueObjectWithReference();
+		$restoredNestedEntity = $restoredValueObject->getEntity();
+
+		$this->assertEquals('Nested entity', $restoredNestedEntity->getName());
+	}
+
+	/**
 	 * Persist all and destroy the persistence session for the next test
 	 */
 	public function tearDown() {

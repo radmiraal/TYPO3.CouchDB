@@ -38,6 +38,12 @@ class TestEntity {
 
 	/**
 	 *
+	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
+	 */
+	protected $relatedValueObjectWithReference;
+
+	/**
+	 *
 	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
 	 */
 	protected $relatedValueObject;
@@ -136,5 +142,18 @@ class TestEntity {
 		$this->relatedValueObjects = $relatedValueObjects;
 	}
 
+	/**
+	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
+	 */
+	public function getRelatedValueObjectWithReference() {
+		return $this->relatedValueObjectWithReference;
+	}
+
+	/**
+	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference $relatedValueObjectWithReference
+	 */
+	public function setRelatedValueObjectWithReference($relatedValueObjectWithReference) {
+		$this->relatedValueObjectWithReference = $relatedValueObjectWithReference;
+	}
 }
 ?>
