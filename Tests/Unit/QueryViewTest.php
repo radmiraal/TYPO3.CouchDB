@@ -50,7 +50,11 @@ class QueryViewTest extends \F3\Testing\BaseTestCase {
 		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$mockReflectionService = $this->getMock('F3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getAllSubClassNamesForClass')->will($this->returnValue(array()));
+
+		$queryView = $this->getAccessibleMock('F3\CouchDB\QueryView', array('dummy'), array($mockQuery));
+		$queryView->_set('reflectionService', $mockReflectionService);
 
 		$mapSource = $queryView->getMapFunctionSource();
 		$this->assertRegExp('/^function\(doc\)\s?\{\s?if\s?\(doc\.classname\s?==\s?"F3\\\\\\\CouchDB\\\\\\\Tests\\\\\\\Unit\\\\\\\TestEntity"\)\s?\{.*\}\s?\}$/', $mapSource);

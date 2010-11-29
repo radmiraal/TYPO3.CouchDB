@@ -342,6 +342,28 @@ class CouchDbTest extends \F3\Testing\FunctionalTestCase {
 	}
 
 	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function subclassesAreQueriedByParentType() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntitySubclass');
+		$entity->setName('Entity subclass');
+
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$object = $repository->findOneByName('Entity subclass');
+		$this->assertEquals('Entity subclass', $object->getName());
+	}
+
+	/**
 	 * Persist all and destroy the persistence session for the next test
 	 *
 	 * @return void
