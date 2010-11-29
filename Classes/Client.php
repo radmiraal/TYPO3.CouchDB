@@ -170,6 +170,7 @@ class Client {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDocuments(array $ids, array $query = NULL) {
+		$ids = array_map(function($id) { return (string)$id; }, $ids);
 		return $this->connector->post('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $query, json_encode(array('keys' => $ids)));
 	}
 

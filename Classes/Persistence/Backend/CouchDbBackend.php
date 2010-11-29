@@ -542,6 +542,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			throw new \F3\CouchDB\InvalidResultException('Expected property "rows" in result', 1290693732, NULL, $result);
 		}
 		return array_map(function($row) {
+			if (!isset($row->doc) && !isset($row->value)) {
+				throw new \F3\CouchDB\InvalidResultException('Expected property "doc" or "value" in row', 1290693735, NULL, $row);
+			}
 			return isset($row->doc) && $row->doc !== NULL ? $row->doc : $row->value;
 		}, $result->rows);
 	}
