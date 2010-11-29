@@ -528,8 +528,11 @@ class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
 		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue($properties));
 		$mockClassSchema->expects($this->any())->method('getClassName')->will($this->returnValue($properties));
 
-		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'collectProperties'));
-		$backend->expects($this->any())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('abc'));
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('abc'));
+
+		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectProperties'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->expects($this->once())->method('collectProperties')->with('abc', $mockObject, $properties, FALSE)->will($this->returnValue(array('foo' => 'bar')));
 		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
 

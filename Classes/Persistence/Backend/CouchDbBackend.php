@@ -275,7 +275,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$className = $object->FLOW3_AOP_Proxy_getProxyTargetClassName();
 		$classSchema = $this->classSchemata[$className];
 		if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
-			$valueIdentifier = $this->getIdentifierByObject($object);
+			$valueIdentifier = $this->persistenceSession->getIdentifierByObject($object);
 			$noDirtyOnValueObject = FALSE;
 			return array(
 				'identifier' => $valueIdentifier,
