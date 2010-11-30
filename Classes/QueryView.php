@@ -31,6 +31,12 @@ namespace F3\CouchDB;
 class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
+	 * @var \F3\FLOW3\Reflection\ReflectionService
+	 * @inject
+	 */
+	protected $reflectionService;
+
+	/**
 	 *
 	 * @var array
 	 */
@@ -221,7 +227,20 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	 * @return string The function source code or null if no map function defined
 	 */
 	public function getMapFunctionSource() {
-		return 'function(doc){if(doc.classname=="' . addslashes($this->type) . '"){' . $this->getEmitStatements() .  '}}';
+		return 'function(doc){if(' . $this->buildClassnameConstraints() . '){' . $this->getEmitStatements() .  '}}';
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function buildClassnameConstraints() {
+		$constraints = array('doc.classname=="' . addslashes($this->type) . '"');
+		$subClassNames = $this->reflectionService->getAllSubClassNamesForClass($this->type);
+		foreach ($subClassNames as $subClassName) {
+			if (strpos($subClassName, 'AOPProxy') !== FALSE) continue;
+			$constraints[] = 'doc.classname=="' . addslashes($subClassName) . '"';
+		}
+		return implode('||', $constraints);
 	}
 
 	/**
