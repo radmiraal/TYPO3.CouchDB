@@ -139,24 +139,26 @@ class Client {
 	/**
 	 * Get all documents in the database
 	 *
-	 * @param array $query Additional query options (e.g. limit or include_docs)
+	 * @param array $queryOptions Additional query options (e.g. limit or include_docs)
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function listDocuments(array $query = NULL) {
-		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $query);
+	public function listDocuments(array $queryOptions = NULL) {
+		$requestOptions = $this->extractRequestOptions($queryOptions);
+		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $queryOptions, NULL, $requestOptions);
 	}
 
 	/**
 	 * Get a single document by id
 	 *
 	 * @param string id The document id
-	 * @param array $query Additional query options (e.g. revs or rev)
+	 * @param array $queryOptions Additional query options (e.g. revs or rev)
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getDocument($id, array $query = NULL) {
-		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), $query);
+	public function getDocument($id, array $queryOptions = NULL) {
+		$requestOptions = $this->extractRequestOptions($queryOptions);
+		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), $queryOptions, NULL, $requestOptions);
 	}
 
 	/**
@@ -165,13 +167,16 @@ class Client {
 	 * Use include_docs => TRUE as query option to fetch the documents.
 	 *
 	 * @param array $ids The document ids as array
-	 * @param array $query Additional query options (e.g. include_docs)
+	 * @param array $queryOptions Additional query options (e.g. include_docs)
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getDocuments(array $ids, array $query = NULL) {
-		$ids = array_map(function($id) { return (string)$id; }, $ids);
-		return $this->connector->post('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $query, json_encode(array('keys' => $ids)));
+	public function getDocuments(array $ids, array $queryOptions = NULL) {
+		$requestOptions = $this->extractRequestOptions($queryOptions);
+		$ids = array_map(function($id) {
+				return (string)$id;
+			}, $ids);
+		return $this->connector->post('/' . urlencode($this->getDatabaseName()) . '/_all_docs', $queryOptions, json_encode(array('keys' => $ids)), $requestOptions);
 	}
 
 	/**
@@ -237,13 +242,14 @@ class Client {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function queryView($designDocumentName, $viewName, array $queryOptions = NULL) {
+		$requestOptions = $this->extractRequestOptions($queryOptions);
 		$path = '/' . urlencode($this->getDatabaseName()) . '/_design/' . urlencode($designDocumentName) . '/_view/' . urlencode($viewName);
 		if ($queryOptions === NULL || !isset($queryOptions['keys'])) {
-			return $this->connector->get($path, $queryOptions);
+			return $this->connector->get($path, $queryOptions, NULL, $requestOptions);
 		} else {
 			$keys = $queryOptions['keys'];
 			unset($queryOptions['keys']);
-			return $this->connector->post($path, $queryOptions, json_encode(array('keys' => $keys)));
+			return $this->connector->post($path, $queryOptions, json_encode(array('keys' => $keys)), $requestOptions);
 		}
 	}
 
@@ -260,6 +266,28 @@ class Client {
 		} else {
 			return urlencode($id);
 		}
+	}
+
+	/**
+	 * Extract request options for the connector and unset them from
+	 * the provided query options
+	 *
+	 * @param array &$queryOptions
+	 * @return array
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function extractRequestOptions(array &$queryOptions = NULL) {
+		if ($queryOptions === NULL) return NULL;
+		$requestOptions = array();
+		if (isset($queryOptions['raw'])) {
+			$requestOptions['raw'] = $queryOptions['raw'];
+			unset($queryOptions['raw']);
+		}
+		if (isset($queryOptions['decodeAssociativeArray'])) {
+			$requestOptions['decodeAssociativeArray'] = $queryOptions['decodeAssociativeArray'];
+			unset($queryOptions['decodeAssociativeArray']);
+		}
+		return $requestOptions;
 	}
 
 	/**
