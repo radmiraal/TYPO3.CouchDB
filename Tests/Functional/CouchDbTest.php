@@ -30,7 +30,7 @@ namespace F3\CouchDB\Tests\Functional;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class CouchDbTest extends \F3\Testing\FunctionalTestCase {
+class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 
 	/**
 	 * @return void
