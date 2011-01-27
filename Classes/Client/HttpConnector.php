@@ -120,7 +120,7 @@ class HttpConnector {
 	 *
 	 * @param string $method
 	 * @param array $params
-	 * @return mixed An object if the response is decoded or the response as a string if raw === TRUE
+	 * @return mixed An object if the response is decoded or the response as a string if requestOptions['raw'] === TRUE
 	 */
 	public function __call($method, array $params) {
 		$method = strtoupper($method);
@@ -131,9 +131,9 @@ class HttpConnector {
 		$path = $params[0];
 		$query = isset($params[1]) ? $params[1] : NULL;
 		$data = isset($params[2]) ? $params[2] : NULL;
-		$raw = isset($params[3]) ? $params[2] : FALSE;
+		$requestOptions = isset($params[3]) ? $params[3] : NULL;
 
-		return $this->request($method, $path, $query, $data, $raw);
+		return $this->request($method, $path, $query, $data, $requestOptions);
 	}
 
 	/**
@@ -213,20 +213,24 @@ class HttpConnector {
 	/**
 	 * Perform a request to the server and return the result
 	 *
-	 * Perform a request to the server and return the result converted into a
-	 * phpillowResponse object. If you do not expect a JSON structure, which
-	 * could be converted in such a response object, set the forth parameter to
-	 * true, and you get a response object retuerned, containing the raw body.
+	 * Perform a request to the server and return the result converted as
+	 * decoded JSON or a response object. If you do not expect a JSON structure,
+	 * which could be converted in such a response object, set the raw request
+	 * option to true, and you get a response object returned, containing
+	 * the raw body.
 	 *
 	 * @param string $method
 	 * @param string $path
 	 * @param array $query
 	 * @param string $data
-	 * @param boolean $raw
+	 * @param array $requestOptions
 	 * @param integer $reconnectAttempt
 	 * @return mixed
 	 */
-	protected function request($method, $path, array $query = NULL, $data = NULL, $raw = FALSE, $reconnectAttempt = 0) {
+	protected function request($method, $path, array $query = NULL, $data = NULL, $requestOptions = NULL, $reconnectAttempt = 0) {
+		$returnRawResponse = $requestOptions !== NULL && isset($requestOptions['raw']) && $requestOptions['raw'] === TRUE;
+		$decodeAssociativeArray = $requestOptions !== NULL && isset($requestOptions['decodeAssociativeArray']) && $requestOptions['decodeAssociativeArray'] === TRUE;
+
 		if ($reconnectAttempt > $this->options['retry']) {
 			throw new \RuntimeException('Too many connection retries', 1287341261);
 		}
@@ -237,7 +241,7 @@ class HttpConnector {
 		if (fwrite($this->connection, $request) === FALSE) {
 			fclose($this->connection);
 			$this->connection = NULL;
-			return $this->request($method, $path, $data, $raw, $reconnectAttempt + 1);
+			return $this->request($method, $path, $data, $requestOptions, $reconnectAttempt + 1);
 		}
 
 			// Read server response headers
@@ -258,7 +262,7 @@ class HttpConnector {
 				// requests, which cause a connection timeout at server side.
 			fclose($this->connection);
 			$this->connection = NULL;
-			return $this->request($method, $path, $data, $raw, $reconnectAttempt + 1);
+			return $this->request($method, $path, $data, $requestOptions, $reconnectAttempt + 1);
 		}
 
 		do {
@@ -327,7 +331,7 @@ class HttpConnector {
 			case 303:
 			case 307:
 				$path = parse_url($headers['location'], PHP_URL_PATH);
-				return $this->request('GET', $path, $data, $raw);
+				return $this->request('GET', $path, $data, $requestOptions);
 		}
 
 		switch ($headers['status']) {
@@ -339,8 +343,8 @@ class HttpConnector {
 					// document we can check for the document properties _id or
 					// _rev, which are always available for documents and are only
 					// available for documents.
-				if ($raw !== TRUE) {
-					return json_decode($body);
+				if (!$returnRawResponse) {
+					return json_decode($body, $decodeAssociativeArray);
 				} else {
 					return new \F3\CouchDB\Client\RawResponse($headers, $body);
 				}
