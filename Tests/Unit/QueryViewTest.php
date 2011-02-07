@@ -27,7 +27,7 @@ namespace F3\CouchDB\Tests\Unit;
  *
  * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
-class QueryViewTest extends \F3\Testing\BaseTestCase {
+class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test

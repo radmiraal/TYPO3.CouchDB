@@ -27,7 +27,7 @@ namespace F3\CouchDB\Tests\Unit\Persistence\Backend;
  *
  * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
-class CouchDbBackendTest extends \F3\Testing\BaseTestCase {
+class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
