@@ -241,7 +241,7 @@ class HttpConnector {
 		if (fwrite($this->connection, $request) === FALSE) {
 			fclose($this->connection);
 			$this->connection = NULL;
-			return $this->request($method, $path, $data, $requestOptions, $reconnectAttempt + 1);
+			return $this->request($method, $path, $query, $data, $requestOptions, $reconnectAttempt + 1);
 		}
 
 			// Read server response headers
@@ -262,7 +262,7 @@ class HttpConnector {
 				// requests, which cause a connection timeout at server side.
 			fclose($this->connection);
 			$this->connection = NULL;
-			return $this->request($method, $path, $data, $requestOptions, $reconnectAttempt + 1);
+			return $this->request($method, $path, $query, $data, $requestOptions, $reconnectAttempt + 1);
 		}
 
 		do {
@@ -331,7 +331,7 @@ class HttpConnector {
 			case 303:
 			case 307:
 				$path = parse_url($headers['location'], PHP_URL_PATH);
-				return $this->request('GET', $path, $data, $requestOptions);
+				return $this->request('GET', $path, $query, $data, $requestOptions);
 		}
 
 		switch ($headers['status']) {
