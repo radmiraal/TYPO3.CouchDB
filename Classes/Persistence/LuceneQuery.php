@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
+namespace F3\CouchDB\Persistence;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -23,56 +23,40 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  *                                                                        */
 
 /**
- * A test repository for functional tests
+ * A special lucene query
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope prototype
  */
-class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
+class LuceneQuery extends \F3\FLOW3\Persistence\Query {
 
 	/**
-	 * @inject
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Index\TestIndex
+	 * @var \F3\CouchDB\Domain\Index\LuceneIndex
 	 */
-	protected $testIndex;
+	protected $index;
 
 	/**
-	 * @param string $name
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index
+	 * @param \F3\FLOW3\Reflection\ReflectionService $reflectionService
 	 */
-	public function findByNameLike($name) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->like('name', $name)
-		);
-		return $query->execute();
+	public function __construct(\F3\CouchDB\Domain\Index\LuceneIndex $index, \F3\FLOW3\Reflection\ReflectionService $reflectionService) {
+		$this->setIndex($index);
+		parent::__construct($index->getIndexName(), $reflectionService);
 	}
 
 	/**
-	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index
+	 * @return void
 	 */
-	public function findByColor($color) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->equals('relatedValueObject.color', $color)
-		);
-		return $query->execute();
+	public function setIndex(\F3\CouchDB\Domain\Index\LuceneIndex $index) {
+		$this->index = $index;
 	}
 
 	/**
-	 * @param string $name
-	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @return \F3\CouchDB\Domain\Index\LuceneIndex
 	 */
-	public function findByNameOrColor($name, $color) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->logicalOr(
-				$query->like('name', $name),
-				$query->equals('relatedValueObject.color', $color)
-			)
-		);
-		return $query->execute();
+	public function getIndex() {
+		return $this->index;
 	}
 
 }

@@ -54,7 +54,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param QueryInterface $query
+	 * @param \F3\FLOW3\Persistence\QueryInterface $query
 	 */
 	public function __construct(\F3\FLOW3\Persistence\QueryInterface $query) {
 		$constraint = $query->getConstraint();

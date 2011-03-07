@@ -1,0 +1,9 @@
+FLOW3:
+  persistence:
+    # Options for the CouchDB backend
+    backendOptions:
+      # database: 'database_name'
+      dataSourceName: 'http://127.0.0.1:5984'
+      username: ~
+      password: ~
+      enableCouchdbLucene: no

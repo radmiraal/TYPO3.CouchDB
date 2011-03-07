@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
+namespace F3\CouchDB\Persistence;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -23,56 +23,30 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  *                                                                        */
 
 /**
- * A test repository for functional tests
+ * A query factory for lucene queries using an index
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
+class LuceneQueryFactory {
 
 	/**
 	 * @inject
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Index\TestIndex
+	 * @var \F3\FLOW3\Object\ObjectManagerInterface
 	 */
-	protected $testIndex;
+	protected $objectManager;
 
 	/**
-	 * @param string $name
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @inject
+	 * @var \F3\FLOW3\Reflection\ReflectionService
 	 */
-	public function findByNameLike($name) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->like('name', $name)
-		);
-		return $query->execute();
-	}
+	protected $reflectionService;
 
 	/**
-	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index The index to use for the query
+	 * @return \F3\CouchDB\Persistence\LuceneQuery
 	 */
-	public function findByColor($color) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->equals('relatedValueObject.color', $color)
-		);
-		return $query->execute();
-	}
-
-	/**
-	 * @param string $name
-	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
-	 */
-	public function findByNameOrColor($name, $color) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->logicalOr(
-				$query->like('name', $name),
-				$query->equals('relatedValueObject.color', $color)
-			)
-		);
-		return $query->execute();
+	public function create($index) {
+		return $this->objectManager->create('F3\CouchDB\Persistence\LuceneQuery', $index, $this->reflectionService);
 	}
 
 }

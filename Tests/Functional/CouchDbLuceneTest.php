@@ -1,0 +1,172 @@
+<?php
+declare(ENCODING = 'utf-8');
+namespace F3\CouchDB\Tests\Functional;
+
+/*                                                                        *
+ * This script belongs to the FLOW3 package "CouchDB".                    *
+ *                                                                        *
+ * It is free software; you can redistribute it and/or modify it under    *
+ * the terms of the GNU Lesser General Public License as published by the *
+ * Free Software Foundation, either version 3 of the License, or (at your *
+ * option) any later version.                                             *
+ *                                                                        *
+ * This script is distributed in the hope that it will be useful, but     *
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHAN-    *
+ * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser       *
+ * General Public License for more details.                               *
+ *                                                                        *
+ * You should have received a copy of the GNU Lesser General Public       *
+ * License along with the script.                                         *
+ * If not, see http://www.gnu.org/licenses/lgpl.html                      *
+ *                                                                        *
+ * The TYPO3 project - inspiring people to share!                         *
+ *                                                                        */
+
+/**
+ * CouchDB Lucene backend functional test.
+ *
+ * Make sure to configure a test database for the Testing context in
+ * Configuration/Testing/Settings.yaml and CouchDB-Lucene is running.
+ *
+ * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ */
+class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
+
+	/**
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function setUp() {
+		$configurationManager = $this->objectManager->get('F3\FLOW3\Configuration\ConfigurationManager');
+		$backendOptions = $configurationManager->getConfiguration(\F3\FLOW3\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, NULL, array('FLOW3', 'persistence', 'backendOptions'));
+
+		if (!$backendOptions['enableCouchdbLucene']) {
+			$this->markTestSkipped('CouchDB Lucene not enabled');
+		}
+
+		$this->enableTestablePersistence();
+
+		parent::setUp();
+
+		$this->resetPersistenceBackend();
+	}
+
+	/**
+	 * Persist all and destroy the persistence session for the next test
+	 *
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function tearDown() {
+		parent::tearDown();
+
+		$this->resetPersistenceBackend();
+	}
+
+	/**
+	 * @test
+	 * @author Felix Oertel <oertel@networkteam.com>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function queryByLikeReturnsCorrectObjects() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity1 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity1->setName('FooABCFoo');
+		$repository->add($entity1);
+
+		$entity2 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity2->setName('BarXYZBar');
+		$repository->add($entity2);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$entities = $repository->findByNameLike('foo*');
+		$this->assertEquals(1, count($entities));
+		$foundEntity1 = $entities[0];
+		$this->assertEquals('FooABCFoo', $foundEntity1->getName());
+
+		$entities = $repository->findByNameLike('bar*bar');
+		$this->assertEquals(1, count($entities));
+		$foundEntity2 = $entities[0];
+		$this->assertContains('BarXYZBar', $foundEntity2->getName());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function indexingAndQueryingSingleNestedValueObject() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Some entity');
+		$valueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
+		$entity->setRelatedValueObject($valueObject);
+		$repository->add($entity);
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Some other entity');
+		$valueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'blue');
+		$entity->setRelatedValueObject($valueObject);
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$entities = $repository->findByColor('green');
+		$this->assertEquals(1, count($entities));
+		$foundEntity = $entities[0];
+		$this->assertEquals('Some entity', $foundEntity->getName());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function queryingWithLogicalOr() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Some entity');
+		$valueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
+		$entity->setRelatedValueObject($valueObject);
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$entities = $repository->findByNameOrColor('Foo', 'green');
+		$this->assertEquals(1, count($entities));
+		$foundEntity = $entities[0];
+		$this->assertEquals('Some entity', $foundEntity->getName());
+
+		$entities = $repository->findByNameOrColor('Some entity', 'foo');
+		$this->assertEquals(1, count($entities));
+		$foundEntity = $entities[0];
+		$this->assertEquals('Some entity', $foundEntity->getName());
+	}
+
+	/**
+	 * Delete the database
+	 *
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function resetPersistenceBackend() {
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
+		$backend->resetStorage();
+	}
+
+}
+?>

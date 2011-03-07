@@ -254,6 +254,21 @@ class Client {
 	}
 
 	/**
+	 * Query a lucene index
+	 *
+	 * @param string $underscoredIndexName The design document name of the index
+	 * @param string $indexType Type of the index to query
+	 * @param array $queryOptions
+	 * @return mixed
+	 * @author Felix Oertel <oertel@networkteam.com>
+	 */
+	public function queryIndex($underscoredIndexName, $indexType, array $queryOptions = NULL) {
+		$requestOptions = $this->extractRequestOptions($queryOptions);
+		$path = '/' . urlencode($this->getDatabaseName()) . '/_fti/_design/' . urlencode($underscoredIndexName) . '/search';
+		return $this->connector->get($path, $queryOptions, NULL, $requestOptions);
+	}
+
+	/**
 	 * Encode a document id and preserve slashes for design documents
 	 *
 	 * @param string $id

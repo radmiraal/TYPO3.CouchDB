@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
+namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Index;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -23,56 +23,23 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  *                                                                        */
 
 /**
- * A test repository for functional tests
+ * A test lucene index
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope singleton
  */
-class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
+class TestIndex extends \F3\CouchDB\Domain\Index\LuceneIndex {
 
 	/**
-	 * @inject
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Index\TestIndex
+	 * Configure the index
+	 *
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected $testIndex;
-
-	/**
-	 * @param string $name
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
-	 */
-	public function findByNameLike($name) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->like('name', $name)
-		);
-		return $query->execute();
-	}
-
-	/**
-	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
-	 */
-	public function findByColor($color) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->equals('relatedValueObject.color', $color)
-		);
-		return $query->execute();
-	}
-
-	/**
-	 * @param string $name
-	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
-	 */
-	public function findByNameOrColor($name, $color) {
-		$query = $this->testIndex->createQuery();
-		$query->matching(
-			$query->logicalOr(
-				$query->like('name', $name),
-				$query->equals('relatedValueObject.color', $color)
-			)
-		);
-		return $query->execute();
+	public function configure() {
+		$this->forEntity('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity')
+			->indexProperty('name')
+			->indexProperty('relatedValueObject.color');
 	}
 
 }

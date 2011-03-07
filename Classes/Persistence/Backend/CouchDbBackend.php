@@ -61,6 +61,11 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	protected $entityByParentIdentifierView;
 
 	/**
+	 * @var boolean
+	 */
+	protected $enableCouchdbLucene = FALSE;
+
+	/**
 	 * @param string $dataSourceName
 	 * @return void
 	 */
@@ -343,6 +348,42 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	}
 
 	/**
+	 * Store an index inside CouchDB if it is not yet defined. Creates the
+	 * index document on the fly if it does not exist already.
+	 *
+	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index
+	 * @param array $arguments
+	 * @return void
+	 * @author Felix Oertel <oertel@networkteam.com>
+	 */
+	public function storeIndex(\F3\CouchDB\Domain\Index\LuceneIndex $index, array $arguments) {
+		try {
+			$design = $this->doOperation(function($client) use ($index) {
+				return $client->getDocument('_design/' . $index->getIndexName());
+			});
+
+			if (isset($design->{$index->getIndexType()}->search)) {
+				return;
+			}
+		} catch (\F3\CouchDB\Client\NotFoundException $notFoundException) {
+			$design = new \stdClass();
+			$design->_id = '_design/' . $index->getIndexName();
+			$design->{$index->getIndexType()} = new \stdClass();
+		}
+
+		$design->{$index->getIndexType()}->search = new \stdClass();
+		$design->{$index->getIndexType()}->search->index = $index->getIndexFunctionSource();
+
+		$this->doOperation(function($client) use ($design) {
+			if (isset($design->_rev)) {
+				$client->updateDocument($design, $design->_id);
+			} else {
+				$client->createDocument($design);
+			}
+		});
+	}
+
+	/**
 	 * Returns the number of records matching the query.
 	 *
 	 * @param \F3\FLOW3\Persistence\QueryInterface $query
@@ -350,12 +391,21 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectCountByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
-		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
-		$result = $this->queryView($view, array('query' => $query, 'count' => TRUE));
-		if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
-			return (count($result->rows) === 1) ? $result->rows[0]->value : 0;
+		if ($query instanceof \F3\CouchDB\Persistence\LuceneQuery) {
+			$result = $this->queryIndex($query->getIndex(), array('query' => $query, 'count' => TRUE));
+			if ($result !== NULL && isset($result->total_rows) && is_int($result->total_rows)) {
+				return $result->total_rows;
+			} else {
+				throw new \F3\CouchDB\InvalidResultException('Could not get count from result', 1287074017, NULL, $result);
+			}
 		} else {
-			throw new \F3\CouchDB\InvalidResultException('Could not get count from result', 1287074016, NULL, $result);
+			$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
+			$result = $this->queryView($view, array('query' => $query, 'count' => TRUE));
+			if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
+				return (count($result->rows) === 1) ? $result->rows[0]->value : 0;
+			} else {
+				throw new \F3\CouchDB\InvalidResultException('Could not get count from result', 1287074016, NULL, $result);
+			}
 		}
 	}
 
@@ -390,8 +440,12 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getObjectDataByQuery(\F3\FLOW3\Persistence\QueryInterface $query) {
-		$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
-		return $this->getObjectDataByView($view, array('query' => $query));
+		if ($query instanceof \F3\CouchDB\Persistence\LuceneQuery) {
+			return $this->getObjectDataByIndex($query->getIndex(), array('query' => $query));
+		} else {
+			$view = $this->objectManager->create('F3\CouchDB\QueryView', $query);
+			return $this->getObjectDataByView($view, array('query' => $query));
+		}
 	}
 
 	/**
@@ -406,6 +460,23 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function getObjectDataByView(\F3\CouchDB\ViewInterface $view, array $arguments) {
 		$result = $this->queryView($view, $arguments);
+		if ($result !== NULL) {
+			return $this->documentsToObjectData($this->resultToDocuments($result));
+		} else {
+			return array();
+		}
+	}
+
+	/**
+	 * Get results for a lucene query and convert documents to object data.
+	 *
+	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index The index to execute
+	 * @param array $arguments An array with arguments to the index
+	 * @return array Array of object data
+	 * @author Felix Oertel <oertel@networkteam.com>
+	 */
+	public function getObjectDataByIndex(\F3\CouchDB\Domain\Index\LuceneIndex $index, array $arguments) {
+		$result = $this->queryIndex($index, $arguments);
 		if ($result !== NULL) {
 			return $this->documentsToObjectData($this->resultToDocuments($result));
 		} else {
@@ -429,6 +500,31 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
 				$that->storeView($view);
 				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
+			}
+		});
+	}
+
+	/**
+	 * "Execute" a lucene query.
+	 *
+	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index The index to execute
+	 * @param array $arguments An array with arguments to the index
+	 * @return object The results of the index
+	 * @author Felix Oertel <oertel@networkteam.com>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function queryIndex(\F3\CouchDB\Domain\Index\LuceneIndex $index, array $arguments) {
+		$that = $this;
+		return $this->doOperation(function($client) use ($index, &$arguments, $that) {
+			try {
+				return $client->queryIndex($index->getIndexName(), $index->getIndexType(), $index->buildIndexParameters($arguments));
+			} catch(\F3\CouchDB\Client\ClientException $clientException) {
+				$information = $clientException->getInformation();
+				if ($information['reason'] === 'no_such_view') {
+					$that->storeIndex($index, $arguments);
+					return $client->queryIndex($index->getIndexName(), $index->getIndexType(), $index->buildIndexParameters($arguments));
+				}
+				throw $clientException;
 			}
 		});
 	}
@@ -565,7 +661,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			return $couchDbOperation($this->client);
 		} catch(\F3\CouchDB\Client\ClientException $clientException) {
 			$information = $clientException->getInformation();
-			if ($information['error'] === 'not_found' && $information['reason'] === 'no_db_file') {
+			if (isset($information['error']) && $information['error'] === 'not_found' && $information['reason'] === 'no_db_file') {
 				if ($this->client->createDatabase($this->databaseName)) {
 					return $this->doOperation($couchDbOperation);
 				} else {
@@ -604,6 +700,20 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		return $this->entityByParentIdentifierView;
 	}
 
-}
+	/**
+	 * @return boolean
+	 */
+	public function getEnableCouchdbLucene() {
+		return $this->enableCouchdbLucene;
+	}
 
+	/**
+	 * @param boolean $enableCouchdbLucene
+	 * @return void
+	 */
+	public function setEnableCouchdbLucene($enableCouchdbLucene) {
+		$this->enableCouchdbLucene = $enableCouchdbLucene;
+	}
+
+}
 ?>

@@ -64,7 +64,8 @@ class HttpConnector {
 	 * @var array
 	 */
 	protected $unencodedQueryParameters = array(
-		'rev' => TRUE
+		'rev' => TRUE,
+		'q' => TRUE
 	);
 
 	/**
@@ -362,6 +363,8 @@ class HttpConnector {
 			case 409: // Conflict
 			case 412: // Precondition Failed - we just consider this as a conflict.
 				throw new \F3\CouchDB\Client\ConflictException($body, 1287395905);
+			case 400:
+				throw new \F3\CouchDB\Client\ClientException($body, 1301496145);
 			default:
 					// All other unhandled HTTP codes are for now handled as an error.
 					// This may not be true, as lots of other status code may be used

@@ -86,6 +86,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$persistenceSession->destroy();
 
 		$entities = $repository->findAll();
+
 		$foundEntity = $entities[0];
 		$this->assertEquals('Foobar', $foundEntity->getName());
 	}
