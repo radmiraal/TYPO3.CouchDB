@@ -448,6 +448,10 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$data = array();
 		foreach ($documents as $document) {
 			$objectData = \F3\FLOW3\Utility\Arrays::convertObjectToArray($document);
+				// CouchDB marks documents as deleted, we need to skip these documents here
+			if (isset($objectData['deleted']) && $objectData['deleted'] === TRUE) {
+				continue;
+			}
 			$objectData['identifier'] = $objectData['_id'];
 			$objectData['metadata'] = array(
 				'CouchDB_Revision' => $objectData['_rev']
