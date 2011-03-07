@@ -27,6 +27,7 @@ namespace F3\CouchDB\Log\Backend;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope prototype
+ * @todo Implement log reader interface
  */
 class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 
@@ -49,6 +50,11 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 	 * @var array
 	 */
 	protected $severityLabels;
+
+	/**
+	 * @var string
+	 */
+	protected $designName = 'FLOW3_Internal';
 
 	/**
 	 * @var \F3\FLOW3\Object\ObjectManagerInterface
@@ -126,10 +132,70 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
 			$information = $notFoundException->getInformation();
 			if ($information['reason'] === 'no_db_file') {
-				$this->client->createDatabase($this->databaseName);
+				$this->initializeDatabase();
 				$this->client->createDocument($document);
 			}
 		}
+	}
+
+	/**
+	 * Read messages from the log, filtered by constraints
+	 *
+	 * @param int $offset
+	 * @param int $limit
+	 * @param int $severityThreshold
+	 * @return array Log entries as array
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function read($offset = 0, $limit = 100, $severityThreshold = LOG_DEBUG) {
+		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
+		try {
+			$result = $this->client->queryView($this->designName, $viewName, array('include_docs' => TRUE, 'descending' => TRUE, 'skip' => $offset, 'limit' => $limit, 'decodeAssociativeArray' => TRUE));
+			return array_map(function($row) { return $row['doc']; }, $result['rows']);
+		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
+			$information = $notFoundException->getInformation();
+			if ($information['reason'] === 'no_db_file') {
+				return array();
+			}
+				// TODO Update design document
+			throw $notFoundException;
+		}
+	}
+
+	/**
+	 * Initializes an empty database and setup the needed view code to
+	 * query for log messages
+	 *
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function initializeDatabase() {
+		if (!$this->client->databaseExists($this->databaseName)) {
+			$this->client->createDatabase($this->databaseName);
+		}
+		$this->client->createDocument(array(
+			'_id' => '_design/' . $this->designName,
+			'views' => array(
+				'greaterEqualDebug' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_DEBUG . '){emit(doc.timestamp,null);}}'
+				),
+				'greaterEqualInfo' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_INFO. '){emit(doc.timestamp,null);}}'
+				),
+				'greaterEqualNotice' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_NOTICE . '){emit(doc.timestamp,null);}}'
+				),
+				'greaterEqualWarning' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_WARNING . '){emit(doc.timestamp,null);}}'
+				),
+				'greaterEqualError' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_ERR . '){emit(doc.timestamp,null);}}'
+				),
+				'greaterEqualCrit' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_CRIT . '){emit(doc.timestamp,null);}}'
+				)
+			)
+		));
 	}
 
 	/**
@@ -164,5 +230,17 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 	public function setDatabaseName($databaseName) {
 		$this->databaseName = $databaseName;
 	}
+
+	/**
+	 * Set the design name for the logger views
+	 *
+	 * @param string $designName
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function setDesignName($designName) {
+		$this->designName = $designName;
+	}
+
 }
 ?>
