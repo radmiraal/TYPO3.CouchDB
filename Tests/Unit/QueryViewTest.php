@@ -57,7 +57,7 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$queryView->_set('reflectionService', $mockReflectionService);
 
 		$mapSource = $queryView->getMapFunctionSource();
-		$this->assertRegExp('/^function\(doc\)\s?\{\s?if\s?\(doc\.classname\s?==\s?"F3\\\\\\\CouchDB\\\\\\\Tests\\\\\\\Unit\\\\\\\TestEntity"\)\s?\{.*\}\s?\}$/', $mapSource);
+		$this->assertRegExp('/^function\(doc\)\s?\{\s?if\s?\(!doc._deleted&&doc\.classname\s?==\s?"F3\\\\\\\CouchDB\\\\\\\Tests\\\\\\\Unit\\\\\\\TestEntity"\)\s?\{.*\}\s?\}$/', $mapSource);
 	}
 
 	/**

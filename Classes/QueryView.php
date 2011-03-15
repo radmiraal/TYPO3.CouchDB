@@ -227,7 +227,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	 * @return string The function source code or null if no map function defined
 	 */
 	public function getMapFunctionSource() {
-		return 'function(doc){if(' . $this->buildClassnameConstraints() . '){' . $this->getEmitStatements() .  '}}';
+		return 'function(doc){if(!doc._deleted&&' . $this->buildClassnameConstraints() . '){' . $this->getEmitStatements() .  '}}';
 	}
 
 	/**
