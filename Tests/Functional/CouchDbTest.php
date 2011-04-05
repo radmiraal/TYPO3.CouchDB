@@ -195,9 +195,6 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setRelatedEntity($relatedEntity);
 		$repository->add($entity);
 
-		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
-		$relatedEntity->setName('Bar');
-
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
@@ -219,9 +216,9 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 
 		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity->setName('Entity with nested SplObjectStorage entities');
+		$relatedEntities = new \SplObjectStorage();
 		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$relatedEntity->setName('Nested entity');
-		$relatedEntities = new \SplObjectStorage();
 		$relatedEntities->attach($relatedEntity);
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
@@ -240,6 +237,38 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$barEntity = $fooEntity->getRelatedEntities()->current();
 		$this->assertNotNull($barEntity);
 		$this->assertEquals('Nested entity', $barEntity->getName());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function nestedMultivalueSplObjectStorageEntityWithBidirectionalAssociation() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity->setName('Entity with nested SplObjectStorage entities');
+		$relatedEntities = new \SplObjectStorage();
+		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity->setName('Nested entity 1');
+		$relatedEntity->setRelatedEntity($entity);
+		$relatedEntities->attach($relatedEntity);
+		$relatedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity->setName('Nested entity 2');
+		$relatedEntity->setRelatedEntity($entity);
+		$relatedEntities->attach($relatedEntity);
+		$entity->setRelatedEntities($relatedEntities);
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession->destroy();
+
+		$fooEntity = $repository->findOneByName('Nested entity 1');
+		$this->assertNotNull($fooEntity);
+		$this->assertNotNull($fooEntity->getRelatedEntity());
 	}
 
 	/**
