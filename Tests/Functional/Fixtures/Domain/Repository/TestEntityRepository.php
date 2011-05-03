@@ -26,6 +26,7 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  * A test repository for functional tests
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope singleton
  */
 class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
 

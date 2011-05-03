@@ -70,18 +70,18 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return array
 	 */
-	protected function buildEmitsForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
+	protected function buildEmitsForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
 		$emits = array();
-		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
+		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				$emits[] = $this->buildEmitForOperand($constraint->getOperand1());
 			} else {
 				throw new \InvalidArgumentException('Operator ' . $constraint->getOperator() . ' is not supported by CouchDB QueryView', 1286466452);
 			}
-		} elseif($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
+		} elseif($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			$emit = new \stdClass();
 			$emit->type = 'and';
 			$emit->constraints = array_merge(
@@ -97,12 +97,12 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Qom\Operand $operand
+	 * @param \F3\FLOW3\Persistence\Generic\Qom\Operand $operand
 	 * @return \stdClass
 	 */
-	protected function buildEmitForOperand(\F3\FLOW3\Persistence\Qom\Operand $operand) {
+	protected function buildEmitForOperand(\F3\FLOW3\Persistence\Generic\Qom\Operand $operand) {
 		$emit = new \stdClass();
-		if ($operand instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
+		if ($operand instanceof \F3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
 			$emit->type = 'property';
 			$emit->property = $operand->getPropertyName();
 		} else {
@@ -113,17 +113,17 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return string
 	 */
-	protected function buildNameForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
-		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
+	protected function buildNameForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
+		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
-				if ($constraint->getOperand1() instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
+				if ($constraint->getOperand1() instanceof \F3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
 					return 'equals<' . $constraint->getOperand1()->getPropertyName() . '>';
 				}
 			}
-		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
+		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			return 'and<' . $this->buildNameForConstraint($constraint->getConstraint1()) . ',' . $this->buildNameForConstraint($constraint->getConstraint2()) . '>';
 		}
 		return '';
@@ -131,15 +131,15 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return mixed
 	 */
-	protected function buildKeyForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
-		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
+	protected function buildKeyForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
+		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				return $this->buildKeyForOperand($constraint->getOperand2());
 			}
-		} elseif($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
+		} elseif($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			return array(
 				$this->buildKeyForConstraint($constraint->getConstraint1()),
 				$this->buildKeyForConstraint($constraint->getConstraint2())

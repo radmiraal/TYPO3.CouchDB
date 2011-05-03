@@ -26,6 +26,7 @@ namespace F3\CouchDB\Persistence;
  * A query factory for lucene queries using an index
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope singleton
  */
 class LuceneQueryFactory {
 

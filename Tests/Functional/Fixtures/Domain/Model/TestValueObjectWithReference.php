@@ -49,5 +49,6 @@ class TestValueObjectWithReference {
 	public function getEntity() {
 		return $this->entity;
 	}
+
 }
 ?>

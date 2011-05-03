@@ -114,13 +114,13 @@ abstract class LuceneIndex {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Qom\Constraint $constraint
+	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return mixed
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function buildStatementForConstraint(\F3\FLOW3\Persistence\Qom\Constraint $constraint) {
-		if ($constraint instanceof \F3\FLOW3\Persistence\Qom\Comparison) {
+	protected function buildStatementForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
+		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
 			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_LIKE ||
 				$constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				$operandValue = $this->buildKeyForOperand($constraint->getOperand2());
@@ -134,11 +134,11 @@ abstract class LuceneIndex {
 			} else {
 				throw new \InvalidArgumentException('Comparison operator ' . get_class($constraint->getOperator()) . ' is not supported by CouchDB QueryIndex', 1300895208);
 			}
-		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalAnd) {
+		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			return '(' . $this->buildStatementForConstraint($constraint->getConstraint1()) . ' AND ' . $this->buildStatementForConstraint($constraint->getConstraint2()) . ')';
-		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalOr) {
+		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalOr) {
 			return '(' . $this->buildStatementForConstraint($constraint->getConstraint1()) . ' OR ' . $this->buildStatementForConstraint($constraint->getConstraint2()) . ')';
-		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Qom\LogicalNot) {
+		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalNot) {
 			return '(NOT ' . $this->buildStatementForConstraint($constraint->getConstraint()) . ')';
 		} else {
 			throw new \InvalidArgumentException('Constraint ' . get_class($constraint) . ' is not supported by CouchDB QueryIndex', 1299689061);
@@ -148,11 +148,11 @@ abstract class LuceneIndex {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Qom\PropertyValue $operand
+	 * @param \F3\FLOW3\Persistence\Generic\Qom\PropertyValue $operand
 	 * @return string
 	 */
 	protected function buildNameForOperand($operand) {
-		if ($operand instanceof \F3\FLOW3\Persistence\Qom\PropertyValue) {
+		if ($operand instanceof \F3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
 			return str_replace('.', '__', $operand->getPropertyName());
 		} else {
 			throw new \InvalidArgumentException('Operand ' . get_class($operand) . ' has to be of type PropertyValue.', 1299690265);

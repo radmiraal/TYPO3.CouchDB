@@ -33,6 +33,11 @@ namespace F3\CouchDB\Tests\Functional;
 class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 
 	/**
+	 * @var boolean
+	 */
+	static protected $testablePersistenceEnabled = TRUE;
+
+	/**
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -43,8 +48,6 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		if (!$backendOptions['enableCouchdbLucene']) {
 			$this->markTestSkipped('CouchDB Lucene not enabled');
 		}
-
-		$this->enableTestablePersistence();
 
 		parent::setUp();
 
@@ -82,7 +85,7 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 
 		$entities = $repository->findByNameLike('foo*');
@@ -118,7 +121,7 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 
 		$entities = $repository->findByColor('green');
@@ -143,7 +146,7 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 
 		$entities = $repository->findByNameOrColor('Foo', 'green');
@@ -164,7 +167,7 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function resetPersistenceBackend() {
-		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Backend\BackendInterface');
 		$backend->resetStorage();
 	}
 

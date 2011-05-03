@@ -33,22 +33,31 @@ namespace F3\CouchDB\Tests\Functional;
 class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 
 	/**
+	 * @var boolean
+	 */
+	static protected $testablePersistenceEnabled = TRUE;
+
+	/**
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function setUp() {
+		parent::setUp();
+
 		$this->resetPersistenceBackend();
 	}
 
 	/**
-	 * Delete the database
+	 * Persist all and destroy the persistence session for the next test
 	 *
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function resetPersistenceBackend() {
-		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
-		$backend->resetStorage();
+	public function tearDown() {
+		parent::tearDown();
+
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
+		$persistenceSession->destroy();
 	}
 
 	/**
@@ -56,7 +65,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function backendIsCouchDbBackend() {
-		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Backend\BackendInterface');
 		$this->assertType('F3\CouchDB\Persistence\Backend\CouchDbBackend', $backend);
 	}
 
@@ -79,11 +88,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setName('Foobar');
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$entities = $repository->findAll();
 
@@ -104,11 +109,11 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
+		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
 		$identifier = $persistenceSession->getIdentifierByObject($entity);
 		$persistenceSession->destroy();
 
-		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Backend\BackendInterface');
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Backend\BackendInterface');
 		$objectData = $backend->getObjectDataByIdentifier($identifier);
 
 		$this->assertEquals($identifier, $objectData['identifier']);
@@ -129,11 +134,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity2->setName('Bar');
 		$repository->add($entity2);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$entities = $repository->findByName('Foo');
 		$this->assertEquals(1, count($entities));
@@ -161,11 +162,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity2->setName('Bar');
 		$repository->add($entity2);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$count = $repository->countByName('Foo');
 		$this->assertEquals(1, $count);
@@ -195,11 +192,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setRelatedEntity($relatedEntity);
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$fooEntity = $repository->findOneByName('Foo');
 		$this->assertNotNull($fooEntity);
@@ -223,11 +216,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$fooEntity = $repository->findOneByName('Entity with nested SplObjectStorage entities');
 		$this->assertNotNull($fooEntity);
@@ -260,11 +249,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$fooEntity = $repository->findOneByName('Nested entity 1');
 		$this->assertNotNull($fooEntity);
@@ -285,11 +270,7 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setRelatedValueObjects(array($relatedValueObject1, $relatedValueObject2));
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$fooEntity = $repository->findOneByName('Entity with nested array valueobjects');
 		$this->assertNotNull($fooEntity);
@@ -316,26 +297,18 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$object = $repository->findOneByName('Entity with single valueobject');
 
-		$metadata = $object->FLOW3_AOP_Proxy_getProperty('FLOW3_Persistence_Metadata');
+		$metadata = $object->FLOW3_Persistence_Metadata;
 		$revision = $metadata['CouchDB_Revision'];
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$object = $repository->findOneByName('Entity with single valueobject');
 
-		$metadata = $object->FLOW3_AOP_Proxy_getProperty('FLOW3_Persistence_Metadata');
+		$metadata = $object->FLOW3_Persistence_Metadata;
 		$newRevision = $metadata['CouchDB_Revision'];
 
 		$this->assertEquals($revision, $newRevision);
@@ -348,20 +321,16 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	public function nestedEntitiesInValueObjectsAreReconstructed() {
 		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Entity with valueobject with reference');
-		$nestedEntity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$nestedEntity = new \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$nestedEntity->setName('Nested entity');
-		$relatedValueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference', $nestedEntity);
+		$relatedValueObject = new \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference($nestedEntity);
 		$entity->setRelatedValueObjectWithReference($relatedValueObject);
 
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$object = $repository->findOneByName('Entity with valueobject with reference');
 
@@ -369,6 +338,26 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$restoredNestedEntity = $restoredValueObject->getEntity();
 
 		$this->assertEquals('Nested entity', $restoredNestedEntity->getName());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function arrayWithStringValuesIsReconstituted() {
+		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Entity with array of strings');
+		$entity->setValueArray(array('Foo', 'Bar'));
+
+		$repository->add($entity);
+
+		$this->tearDown();
+
+		$object = $repository->findOneByName('Entity with array of strings');
+
+		$this->assertEquals(array('Foo', 'Bar'), $object->getValueArray());
 	}
 
 	/**
@@ -383,28 +372,21 @@ class CouchDbTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+		$this->tearDown();
 
 		$object = $repository->findOneByName('Entity subclass');
 		$this->assertEquals('Entity subclass', $object->getName());
 	}
 
 	/**
-	 * Persist all and destroy the persistence session for the next test
+	 * Delete the database
 	 *
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function tearDown() {
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Session');
-		$persistenceSession->destroy();
+	protected function resetPersistenceBackend() {
+		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Backend\BackendInterface');
+		$backend->resetStorage();
 	}
 }
 ?>

@@ -26,8 +26,9 @@ namespace F3\CouchDB\Persistence\Backend;
  * A CouchDB persistence backend
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope singleton
  */
-class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
+class CouchDbBackend extends \F3\FLOW3\Persistence\Generic\Backend\AbstractBackend {
 
 	/**
 	 * @var \F3\CouchDB\Client
@@ -98,6 +99,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 */
 	public function initialize(array $options) {
 		parent::initialize($options);
+		$this->classSchemata = $this->reflectionService->getClassSchemata();
 		$this->connect();
 	}
 
@@ -129,7 +131,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 			$objectState = self::OBJECTSTATE_NEW;
 		}
 
-		$classSchema = $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()];
+		$classSchema = $this->classSchemata[get_class($object)];
 		$dirty = FALSE;
 		$objectData = array(
 			'identifier' => $identifier,
@@ -155,11 +157,9 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function collectMetadata($object) {
-		$metadata = NULL;
-		if ($object->FLOW3_AOP_Proxy_hasProperty('FLOW3_Persistence_Metadata')) {
-			$metadata = $object->FLOW3_AOP_Proxy_getProperty('FLOW3_Persistence_Metadata');
+		if (isset($object->FLOW3_Persistence_Metadata)) {
+			return $object->FLOW3_Persistence_Metadata;
 		}
-		return $metadata;
 	}
 
 	/**
@@ -204,7 +204,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		$propertyData = array();
 		foreach ($properties as $propertyName => $propertyMetaData) {
 			$this->checkPropertyValue($object, $propertyName, $propertyMetaData);
-			$propertyValue = $object->FLOW3_AOP_Proxy_getProperty($propertyName);
+			$propertyValue = \F3\FLOW3\Reflection\ObjectAccess::getProperty($object, $propertyName, TRUE);
 
 			if ($this->persistenceSession->isDirty($object, $propertyName)) {
 				$dirty = TRUE;
@@ -230,8 +230,8 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
 			foreach ($result->rows as $row) {
 				$object = $this->persistenceSession->getObjectByIdentifier($row->id);
-				if ($this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()]->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY
-						&& $this->classSchemata[$object->FLOW3_AOP_Proxy_getProxyTargetClassName()]->isAggregateRoot() === FALSE) {
+				if ($this->classSchemata[get_class($object)]->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY
+						&& $this->classSchemata[get_class($object)]->isAggregateRoot() === FALSE) {
 					$this->removeEntity($object);
 				}
 			};
@@ -271,13 +271,13 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 	/**
 	 * Process object data for an object
 	 *
-	 * @param \F3\FLOW3\AOP\ProxyInterface $object
+	 * @param object $object
 	 * @param string $parentIdentifier
 	 * @return array The object data for the given object
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
-	protected function processObject(\F3\FLOW3\AOP\ProxyInterface $object, $parentIdentifier) {
-		$className = $object->FLOW3_AOP_Proxy_getProxyTargetClassName();
+	protected function processObject($object, $parentIdentifier) {
+		$className = get_class($object);
 		$classSchema = $this->classSchemata[$className];
 		if ($classSchema->getModelType() === \F3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
 			$valueIdentifier = $this->persistenceSession->getIdentifierByObject($object);
@@ -621,7 +621,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 						} else {
 							$propertyData['value'][$index]['value'] = array('identifier' => $propertyData['value'][$index]['value']['identifier'], 'classname' => $propertyData['value'][$index]['type'], 'properties' => array());
 						}
-					} elseif (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties'])) {
+					} elseif (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties']) && is_array($propertyData['value'][$index]['value'])) {
 						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value'][$index]['value']['classname']]);
 					}
 				}
@@ -642,7 +642,7 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Backend\AbstractBackend {
 		}
 		return array_map(function($row) {
 			if (!isset($row->doc) && !isset($row->value)) {
-				throw new \F3\CouchDB\InvalidResultException('Expected property "doc" or "value" in row', 1290693735, NULL, $row);
+				throw new \F3\CouchDB\InvalidResultException('Expected property "doc" or "value" in row, got ' . var_export($row, TRUE), 1290693735, NULL, $row);
 			}
 			return isset($row->doc) && $row->doc !== NULL ? $row->doc : $row->value;
 		}, $result->rows);

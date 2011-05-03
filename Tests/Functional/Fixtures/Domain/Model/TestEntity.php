@@ -65,6 +65,11 @@ class TestEntity {
 	protected $relatedEntities;
 
 	/**
+	 * @var array
+	 */
+	protected $valueArray;
+
+	/**
 	 *
 	 * @return string
 	 */
@@ -155,5 +160,21 @@ class TestEntity {
 	public function setRelatedValueObjectWithReference($relatedValueObjectWithReference) {
 		$this->relatedValueObjectWithReference = $relatedValueObjectWithReference;
 	}
+
+	/**
+	 * @return array
+	 */
+	public function getValueArray() {
+		return $this->valueArray;
+	}
+
+	/**
+	 * @param array $valueArray
+	 * @return void
+	 */
+	public function setValueArray($valueArray) {
+		$this->valueArray = $valueArray;
+	}
+
 }
 ?>

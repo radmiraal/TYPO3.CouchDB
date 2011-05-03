@@ -1,2 +1,4 @@
-F3\FLOW3\Persistence\Backend\BackendInterface:
+F3\FLOW3\Persistence\Generic\Backend\BackendInterface:
   className: 'F3\CouchDB\Persistence\Backend\CouchDbBackend'
+F3\FLOW3\Persistence\PersistenceManagerInterface:
+  className: 'F3\FLOW3\Persistence\Generic\PersistenceManager'

@@ -69,26 +69,25 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function storeObjectReturnsReconstitutedObjectStateIfSessionHasObject() {
 		$className = 'stdClass';
-		$object = $this->getMock($className, array('FLOW3_AOP_Proxy_getProxyTargetClassName'));
-		$object->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue($className));
+		$object = $this->getMock($className);
 		$identifier = 'abcdefg';
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue(array('foo' => 'options')));
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->atLeastOnce())
 			->method('hasObject')
 			->with($object)
 			->will($this->returnValue(TRUE));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
-		$backend->_set('classSchemata', array($className => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$objectData = array();
 		$result = $backend->_call('storeObject', $object, $identifier, NULL, $objectData);
 
-		$this->assertEquals(\F3\FLOW3\Persistence\Backend\AbstractBackend::OBJECTSTATE_RECONSTITUTED, $result);
+		$this->assertEquals(\F3\FLOW3\Persistence\Generic\Backend\AbstractBackend::OBJECTSTATE_RECONSTITUTED, $result);
 	}
 
 	/**
@@ -97,14 +96,13 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function storeObjectRegistersObjectAndReturnsNewObjectStateIfSessionDoesntHaveObject() {
 		$className = 'stdClass';
-		$object = $this->getMock($className, array('FLOW3_AOP_Proxy_getProxyTargetClassName'));
-		$object->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue($className));
+		$object = $this->getMock($className);
 		$identifier = 'abcdefg';
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue(array('foo' => 'options')));
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->atLeastOnce())
 			->method('hasObject')
 			->with($object)
@@ -112,12 +110,12 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockPersistenceSession->expects($this->once())->method('registerObject')->with($object, $identifier);
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
-		$backend->_set('classSchemata', array($className => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$objectData = array();
 		$result = $backend->_call('storeObject', $object, $identifier, NULL, $objectData);
 
-		$this->assertEquals(\F3\FLOW3\Persistence\Backend\AbstractBackend::OBJECTSTATE_NEW, $result);
+		$this->assertEquals(\F3\FLOW3\Persistence\Generic\Backend\AbstractBackend::OBJECTSTATE_NEW, $result);
 	}
 
 	/**
@@ -126,8 +124,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function storeObjectSetsObjectDataFromCollectedPropertiesAndMetadata() {
 		$className = 'stdClass';
-		$object = $this->getMock($className, array('FLOW3_AOP_Proxy_getProxyTargetClassName'));
-		$object->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue($className));
+		$object = $this->getMock($className);
 		$identifier = 'abcdefg';
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
@@ -135,14 +132,14 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue($classSchemaProperties));
 		$mockClassSchema->expects($this->any())->method('getClassName')->will($this->returnValue('SchemaClassName'));
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())
 			->method('hasObject')
 			->with($object)
 			->will($this->returnValue(FALSE));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
-		$backend->_set('classSchemata', array($className => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 
 		$collectedProperties = array('foo' => 'bar', 'bar' => 'baz');
@@ -166,7 +163,6 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$this->assertEquals($expectedObjectData, $objectData);
 	}
 
-
 	/**
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
@@ -174,8 +170,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	public function collectMetadataReturnsProxyMetadata() {
 		$object = $this->getMock('stdClass', array('FLOW3_AOP_Proxy_hasProperty', 'FLOW3_AOP_Proxy_getProperty'));
 		$metadata = array('metadata' => 'foo');
-		$object->expects($this->atLeastOnce())->method('FLOW3_AOP_Proxy_hasProperty')->with('FLOW3_Persistence_Metadata')->will($this->returnValue(TRUE));
-		$object->expects($this->atLeastOnce())->method('FLOW3_AOP_Proxy_getProperty')->with('FLOW3_Persistence_Metadata')->will($this->returnValue($metadata));
+		$object->FLOW3_Persistence_Metadata = $metadata;
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$result = $backend->_call('collectMetadata', $object);
@@ -252,8 +247,9 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function collectPropertiesChecksPropertyValues() {
 		$object = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$object->foo = NULL;
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())
 			->method('isDirty')
 			->with($object, 'foo')
@@ -280,8 +276,9 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function collectPropertiesSetsDirtyReferenceIfPropertyIsDirty() {
 		$object = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$object->foo = NULL;
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())
 			->method('isDirty')
 			->with($object, 'foo')
@@ -308,12 +305,13 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function collectPropertiesDoesntSetDirtyReferenceIfNoPropertyIsDirty() {
-		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$object = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
+		$object->foo = NULL;
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())
 			->method('isDirty')
-			->with($mockObject, 'foo')
+			->with($object, 'foo')
 			->will($this->returnValue(FALSE));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('checkPropertyValue', 'flattenValue'));
@@ -327,7 +325,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 			)
 		);
 		$dirty = FALSE;
-		$backend->_callRef('collectProperties', $identifier, $mockObject, $properties, $dirty);
+		$backend->_callRef('collectProperties', $identifier, $object, $properties, $dirty);
 
 		$this->assertFalse($dirty);
 	}
@@ -355,9 +353,8 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function removeEntitiesByParentRemovesNonAggregateRootEntities() {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
-		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getObjectByIdentifier')->with('xyz')->will($this->returnValue($mockObject));
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
@@ -366,7 +363,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
-		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
 
 		$row = new \stdClass();
 		$row->id = 'xyz';
@@ -388,9 +385,8 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function removeEntitiesByParentDoesNotRemoveAggregateRootEntities() {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
-		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getObjectByIdentifier')->with('xyz')->will($this->returnValue($mockObject));
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
@@ -399,7 +395,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
-		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
 
 		$row = new \stdClass();
 		$row->id = 'xyz';
@@ -423,7 +419,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('xyz'));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
@@ -445,7 +441,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	public function removeEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('xyz'));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation', 'removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
@@ -476,14 +472,13 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function processObjectPersistsNestedEntities() {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
-		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'persistObject'));
 		$backend->expects($this->once())->method('persistObject')->with($mockObject, 'xyz')->will($this->returnValue('abc'));
-		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
 
 		$result = $backend->_call('processObject', $mockObject, 'xyz');
 		$this->assertEquals(array(
@@ -497,14 +492,13 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function processObjectPersistsEntities() {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
-		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
 
 		$mockClassSchema = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\F3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'persistObject'));
 		$backend->expects($this->once())->method('persistObject')->with($mockObject, 'xyz')->will($this->returnValue('abc'));
-		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
 
 		$result = $backend->_call('processObject', $mockObject, 'xyz');
 		$this->assertEquals(array(
@@ -518,7 +512,6 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function processObjectInlinesValueObjects() {
 		$mockObject = $this->getMock('F3\FLOW3\AOP\ProxyInterface');
-		$mockObject->expects($this->any())->method('FLOW3_AOP_Proxy_getProxyTargetClassName')->will($this->returnValue('TargetClassName'));
 
 		$properties = array(
 			'foo' => 'options'
@@ -528,18 +521,18 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue($properties));
 		$mockClassSchema->expects($this->any())->method('getClassName')->will($this->returnValue($properties));
 
-		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Session');
+		$mockPersistenceSession = $this->getMock('F3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('abc'));
 
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectProperties'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->expects($this->once())->method('collectProperties')->with('abc', $mockObject, $properties, FALSE)->will($this->returnValue(array('foo' => 'bar')));
-		$backend->_set('classSchemata', array('TargetClassName' => $mockClassSchema));
+		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
 
 		$result = $backend->_call('processObject', $mockObject, 'xyz');
 		$this->assertEquals(array(
 			'identifier' => 'abc',
-			'classname' => 'TargetClassName',
+			'classname' => get_class($mockObject),
 			'properties' => array(
 				'foo' => 'bar'
 			)
