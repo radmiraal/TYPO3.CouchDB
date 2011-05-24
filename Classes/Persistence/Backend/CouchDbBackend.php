@@ -593,9 +593,14 @@ class CouchDbBackend extends \F3\FLOW3\Persistence\Generic\Backend\AbstractBacke
 	 * @param array &$knownObjects
 	 * @param \F3\FLOW3\Reflection\ClassSchema $classSchema
 	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function processResultProperties(array &$properties, array &$identifiersToFetch, array &$knownObjects, \F3\FLOW3\Reflection\ClassSchema $classSchema) {
 		foreach ($properties as $propertyName => &$propertyData) {
+				// Skip unknown properties
+			if (!$classSchema->hasProperty($propertyName)) {
+				continue;
+			}
 			$propertyMetadata = $classSchema->getProperty($propertyName);
 			if (!$propertyData['multivalue']) {
 				if (isset($propertyData['value']['identifier']) && !isset($propertyData['value']['classname'])) {

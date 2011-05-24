@@ -862,7 +862,9 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClassSchemaFooBar = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaFooBar->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$mockClassSchemaBarBaz = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaBarBaz->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
 		$backend->_set('client', $mockClient);
 
@@ -936,7 +938,9 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClassSchemaFooBar = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaFooBar->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$mockClassSchemaBarBaz = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaBarBaz->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
 		$backend->_set('client', $mockClient);
 
@@ -1006,7 +1010,9 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\UnitTestCase {
 		$mockClient = $this->getMock('F3\CouchDB\Client', array(), array(), '', FALSE);
 		$backend = $this->getAccessibleMock('F3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClassSchemaFooBar = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaFooBar->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$mockClassSchemaBarBaz = $this->getMock('F3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
+		$mockClassSchemaBarBaz->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
 		$backend->_set('client', $mockClient);
 
