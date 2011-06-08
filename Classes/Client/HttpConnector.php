@@ -151,7 +151,7 @@ class HttpConnector {
 		if (($this->connection === NULL)
 				&& (($this->connection = fsockopen($this->options['host'], $this->options['port'], $errno, $errstr)) === FALSE)) {
 			$this->connection = NULL;
-			throw new \RuntimeException('Could not connect to server at ' . $this->options['ip'] . ':' . $this->options['port'] . ' ' . $errno . ': "' . $errstr . '"', 1287339586);
+			throw new \RuntimeException('Could not connect to server at ' . $this->options['host'] . ':' . $this->options['port'] . ' ' . $errno . ': "' . $errstr . '"', 1287339586);
 		}
 	}
 
