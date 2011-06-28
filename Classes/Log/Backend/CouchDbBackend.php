@@ -131,35 +131,52 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 			$this->client->createDocument($document);
 		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
 			$information = $notFoundException->getInformation();
-			if ($information['reason'] === 'no_db_file') {
+			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing') {
 				$this->initializeDatabase();
 				$this->client->createDocument($document);
+				return;
 			}
+			throw $notFoundException;
 		}
 	}
 
 	/**
 	 * Read messages from the log, filtered by constraints
 	 *
-	 * @param int $offset
-	 * @param int $limit
-	 * @param int $severityThreshold
+	 * Initializes the database or view lazily.
+	 *
+	 * @param integer $offset
+	 * @param integer $limit
+	 * @param integer $severityThreshold
 	 * @return array Log entries as array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function read($offset = 0, $limit = 100, $severityThreshold = LOG_DEBUG) {
 		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
 		try {
-			$result = $this->client->queryView($this->designName, $viewName, array('include_docs' => TRUE, 'descending' => TRUE, 'skip' => $offset, 'limit' => $limit, 'decodeAssociativeArray' => TRUE));
-			return array_map(function($row) { return $row['doc']; }, $result['rows']);
+			return $this->readView($viewName, $offset, $limit);
 		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
 			$information = $notFoundException->getInformation();
-			if ($information['reason'] === 'no_db_file') {
-				return array();
+			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing') {
+				$this->initializeDatabase();
+				return $this->readView($viewName, $offset, $limit);
 			}
-				// TODO Update design document
 			throw $notFoundException;
 		}
+	}
+
+	/**
+	 * Read log entries from the given view
+	 *
+	 * @param string $viewName
+	 * @param integer $offset
+	 * @param integer $limit
+	 * @return array
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function readView($viewName, $offset, $limit) {
+		$result = $this->client->queryView($this->designName, $viewName, array('include_docs' => TRUE, 'descending' => TRUE, 'skip' => $offset, 'limit' => $limit, 'decodeAssociativeArray' => TRUE));
+		return array_map(function($row) { return $row['doc']; }, $result['rows']);
 	}
 
 	/**

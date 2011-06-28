@@ -83,7 +83,7 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function appendOneMessageAndFilterRead() {
 		$this->backend->append('Foo', LOG_INFO);
-		$logs = $this->backend->read(100, LOG_WARNING);
+		$logs = $this->backend->read(0, 100, LOG_WARNING);
 		$this->assertEquals(0, count($logs));
 	}
 
@@ -95,5 +95,19 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 		$logs = $this->backend->read();
 		$this->assertEquals(0, count($logs));
 	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function viewGetsCreatedIfDatabaseExists() {
+		$this->client->createDatabase($this->databaseName);
+
+		$this->backend->append('Test entry', LOG_WARNING);
+
+		$logs = $this->backend->read(0, 100, LOG_WARNING);
+		$this->assertEquals(1, count($logs));
+	}
+
 }
 ?>
