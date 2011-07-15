@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB;
+namespace TYPO3\CouchDB;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -28,7 +28,7 @@ namespace F3\CouchDB;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope prototype
  */
-class EntityByParentIdentifierView implements \F3\CouchDB\ViewInterface {
+class EntityByParentIdentifierView implements \TYPO3\CouchDB\ViewInterface {
 
 	/**
 	 * Get the design name where the view is defined. This is FLOW3 as a

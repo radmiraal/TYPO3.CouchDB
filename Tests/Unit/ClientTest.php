@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Unit;
+namespace TYPO3\CouchDB\Tests\Unit;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -29,10 +29,10 @@ namespace F3\CouchDB\Tests\Unit;
  *
  * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
-class ClientTest extends \F3\FLOW3\Tests\UnitTestCase {
+class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
-	 * @var \F3\CouchDB\Client
+	 * @var \TYPO3\CouchDB\Client
 	 */
 	protected $client;
 
@@ -45,10 +45,10 @@ class ClientTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * Setup a CouchDB HTTP connector
 	 */
 	public function setUp() {
-		$connector = new \F3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
-		$mockObjectManager = $this->getMock('F3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->once())->method('create')->with('F3\CouchDB\Client\HttpConnector', '127.0.0.1', '5984', NULL, NULL, array())->will($this->returnValue($connector));
-		$this->client = $this->getAccessibleMock('F3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984'));
+		$connector = new \TYPO3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
+		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
+		$mockObjectManager->expects($this->once())->method('create')->with('TYPO3\CouchDB\Client\HttpConnector', '127.0.0.1', '5984', NULL, NULL, array())->will($this->returnValue($connector));
+		$this->client = $this->getAccessibleMock('TYPO3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984'));
 		$this->client->_set('objectManager', $mockObjectManager);
 		$this->client->initializeObject();
 
@@ -149,7 +149,7 @@ class ClientTest extends \F3\FLOW3\Tests\UnitTestCase {
 		try {
 			$response = $this->client->getDocument('abc');
 			$this->fail('Deleted document should not be found');
-		} catch(\F3\CouchDB\Client\NotFoundException $e) {
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $e) {
 
 		}
 	}

@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB;
+namespace TYPO3\CouchDB;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *

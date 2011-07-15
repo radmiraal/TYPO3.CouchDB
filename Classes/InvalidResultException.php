@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB;
+namespace TYPO3\CouchDB;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -28,7 +28,7 @@ namespace F3\CouchDB;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class InvalidResultException extends \F3\FLOW3\Exception {
+class InvalidResultException extends \TYPO3\FLOW3\Exception {
 
 	/**
 	 * @var object

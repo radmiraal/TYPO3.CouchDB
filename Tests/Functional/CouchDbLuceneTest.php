@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional;
+namespace TYPO3\CouchDB\Tests\Functional;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -30,7 +30,7 @@ namespace F3\CouchDB\Tests\Functional;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
+class CouchDbLuceneTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 
 	/**
 	 * @var boolean
@@ -42,14 +42,14 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function setUp() {
-		$configurationManager = $this->objectManager->get('F3\FLOW3\Configuration\ConfigurationManager');
-		$backendOptions = $configurationManager->getConfiguration(\F3\FLOW3\Configuration\ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, NULL, array('FLOW3', 'persistence', 'backendOptions'));
+		parent::setUp();
+
+		$configurationManager = $this->objectManager->get('TYPO3\FLOW3\Configuration\ConfigurationManager');
+		$backendOptions = $this->objectManager->getSettingsByPath(array('TYPO3', 'FLOW3', 'persistence', 'backendOptions'));
 
 		if (!$backendOptions['enableCouchdbLucene']) {
 			$this->markTestSkipped('CouchDB Lucene not enabled');
 		}
-
-		parent::setUp();
 
 		$this->resetPersistenceBackend();
 	}
@@ -72,20 +72,20 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function queryByLikeReturnsCorrectObjects() {
-		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity1 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity1 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity1->setName('FooABCFoo');
 		$repository->add($entity1);
 
-		$entity2 = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity2 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity2->setName('BarXYZBar');
 		$repository->add($entity2);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager = $this->objectManager->get('TYPO3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
+		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 
 		$entities = $repository->findByNameLike('foo*');
@@ -104,24 +104,24 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function indexingAndQueryingSingleNestedValueObject() {
-		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity->setName('Some entity');
-		$valueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
+		$valueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
 		$entity->setRelatedValueObject($valueObject);
 		$repository->add($entity);
 
-		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity->setName('Some other entity');
-		$valueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'blue');
+		$valueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'blue');
 		$entity->setRelatedValueObject($valueObject);
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager = $this->objectManager->get('TYPO3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
+		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 
 		$entities = $repository->findByColor('green');
@@ -135,18 +135,18 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function queryingWithLogicalOr() {
-		$repository = $this->objectManager->get('F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$entity->setName('Some entity');
-		$valueObject = $this->objectManager->create('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
+		$valueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
 		$entity->setRelatedValueObject($valueObject);
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('F3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager = $this->objectManager->get('TYPO3\FLOW3\Persistence\PersistenceManagerInterface');
 		$persistenceManager->persistAll();
 
-		$persistenceSession = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Session');
+		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 
 		$entities = $repository->findByNameOrColor('Foo', 'green');
@@ -167,7 +167,7 @@ class CouchDbLuceneTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function resetPersistenceBackend() {
-		$backend = $this->objectManager->get('F3\FLOW3\Persistence\Generic\Backend\BackendInterface');
+		$backend = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Backend\BackendInterface');
 		$backend->resetStorage();
 	}
 

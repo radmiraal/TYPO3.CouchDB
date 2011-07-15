@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
+namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -28,17 +28,17 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope singleton
  */
-class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
+class TestEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
 
 	/**
 	 * @inject
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Index\TestIndex
+	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Index\TestIndex
 	 */
 	protected $testIndex;
 
 	/**
 	 * @param string $name
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
 	 */
 	public function findByNameLike($name) {
 		$query = $this->testIndex->createQuery();
@@ -50,7 +50,7 @@ class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
 
 	/**
 	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
 	 */
 	public function findByColor($color) {
 		$query = $this->testIndex->createQuery();
@@ -63,7 +63,7 @@ class TestEntityRepository extends \F3\FLOW3\Persistence\Repository {
 	/**
 	 * @param string $name
 	 * @param string $color
-	 * @return \F3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
 	 */
 	public function findByNameOrColor($name, $color) {
 		$query = $this->testIndex->createQuery();

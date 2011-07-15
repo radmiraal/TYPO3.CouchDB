@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Log\Backend;
+namespace TYPO3\CouchDB\Log\Backend;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -29,7 +29,7 @@ namespace F3\CouchDB\Log\Backend;
  * @scope prototype
  * @todo Implement log reader interface
  */
-class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
+class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 
 	/**
 	 * @var string
@@ -42,7 +42,7 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 	protected $databaseName;
 
 	/**
-	 * @var \F3\CouchDB\Client
+	 * @var \TYPO3\CouchDB\Client
 	 */
 	protected $client;
 
@@ -57,15 +57,15 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 	protected $designName = 'FLOW3_Internal';
 
 	/**
-	 * @var \F3\FLOW3\Object\ObjectManagerInterface
+	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
-	 * @param \F3\FLOW3\Object\ObjectManagerInterface $objectManager
+	 * @param \TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectObjectManager(\F3\FLOW3\Object\ObjectManagerInterface $objectManager) {
+	public function injectObjectManager(\TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
@@ -88,7 +88,7 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 			LOG_DEBUG   => 'debug',
 		);
 
-		$this->client = $this->objectManager->create('F3\CouchDB\Client', $this->dataSourceName);
+		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
 		$this->client->setDatabaseName($this->databaseName);
 	}
 
@@ -129,7 +129,7 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 
 		try {
 			$this->client->createDocument($document);
-		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
 			$information = $notFoundException->getInformation();
 			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing') {
 				$this->initializeDatabase();
@@ -155,7 +155,7 @@ class CouchDbBackend extends \F3\FLOW3\Log\Backend\AbstractBackend {
 		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
 		try {
 			return $this->readView($viewName, $offset, $limit);
-		} catch(\F3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
 			$information = $notFoundException->getInformation();
 			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing') {
 				$this->initializeDatabase();

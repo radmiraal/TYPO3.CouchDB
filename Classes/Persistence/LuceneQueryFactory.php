@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Persistence;
+namespace TYPO3\CouchDB\Persistence;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -32,22 +32,22 @@ class LuceneQueryFactory {
 
 	/**
 	 * @inject
-	 * @var \F3\FLOW3\Object\ObjectManagerInterface
+	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
 	 * @inject
-	 * @var \F3\FLOW3\Reflection\ReflectionService
+	 * @var \TYPO3\FLOW3\Reflection\ReflectionService
 	 */
 	protected $reflectionService;
 
 	/**
-	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index The index to use for the query
-	 * @return \F3\CouchDB\Persistence\LuceneQuery
+	 * @param \TYPO3\CouchDB\Domain\Index\LuceneIndex $index The index to use for the query
+	 * @return \TYPO3\CouchDB\Persistence\LuceneQuery
 	 */
 	public function create($index) {
-		return $this->objectManager->create('F3\CouchDB\Persistence\LuceneQuery', $index, $this->reflectionService);
+		return $this->objectManager->create('TYPO3\CouchDB\Persistence\LuceneQuery', $index, $this->reflectionService);
 	}
 
 }

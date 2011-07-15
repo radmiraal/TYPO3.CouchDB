@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Persistence;
+namespace TYPO3\CouchDB\Persistence;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -28,32 +28,32 @@ namespace F3\CouchDB\Persistence;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope prototype
  */
-class LuceneQuery extends \F3\FLOW3\Persistence\Generic\Query {
+class LuceneQuery extends \TYPO3\FLOW3\Persistence\Generic\Query {
 
 	/**
-	 * @var \F3\CouchDB\Domain\Index\LuceneIndex
+	 * @var \TYPO3\CouchDB\Domain\Index\LuceneIndex
 	 */
 	protected $index;
 
 	/**
-	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index
-	 * @param \F3\FLOW3\Reflection\ReflectionService $reflectionService
+	 * @param \TYPO3\CouchDB\Domain\Index\LuceneIndex $index
+	 * @param \TYPO3\FLOW3\Reflection\ReflectionService $reflectionService
 	 */
-	public function __construct(\F3\CouchDB\Domain\Index\LuceneIndex $index, \F3\FLOW3\Reflection\ReflectionService $reflectionService) {
+	public function __construct(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index, \TYPO3\FLOW3\Reflection\ReflectionService $reflectionService) {
 		$this->setIndex($index);
 		parent::__construct($index->getIndexName(), $reflectionService);
 	}
 
 	/**
-	 * @param \F3\CouchDB\Domain\Index\LuceneIndex $index
+	 * @param \TYPO3\CouchDB\Domain\Index\LuceneIndex $index
 	 * @return void
 	 */
-	public function setIndex(\F3\CouchDB\Domain\Index\LuceneIndex $index) {
+	public function setIndex(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index) {
 		$this->index = $index;
 	}
 
 	/**
-	 * @return \F3\CouchDB\Domain\Index\LuceneIndex
+	 * @return \TYPO3\CouchDB\Domain\Index\LuceneIndex
 	 */
 	public function getIndex() {
 		return $this->index;

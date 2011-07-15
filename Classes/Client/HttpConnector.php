@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Client;
+namespace TYPO3\CouchDB\Client;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -91,7 +91,7 @@ class HttpConnector {
 		$this->options['username'] = $username;
 		$this->options['password'] = $password;
 
-		$this->options = \F3\FLOW3\Utility\Arrays::arrayMergeRecursiveOverrule($this->options, $options, TRUE);
+		$this->options = \TYPO3\FLOW3\Utility\Arrays::arrayMergeRecursiveOverrule($this->options, $options, TRUE);
 	}
 
 	/**
@@ -347,24 +347,24 @@ class HttpConnector {
 				if (!$returnRawResponse) {
 					return json_decode($body, $decodeAssociativeArray);
 				} else {
-					return new \F3\CouchDB\Client\RawResponse($headers, $body);
+					return new \TYPO3\CouchDB\Client\RawResponse($headers, $body);
 				}
 			case 201:
 			case 202:
 					// The following status codes are given for status responses
 					// depending on the request type - which does not matter here any
 					// more.
-				return new \F3\CouchDB\Client\StatusResponse($body);
+				return new \TYPO3\CouchDB\Client\StatusResponse($body);
 			case 404:
 					// The 404 and 409 (412) errors are using custom exceptions
 					// extending the base error exception, because they are often
 					// required to be handled in a special way by the application.
-				throw new \F3\CouchDB\Client\NotFoundException($body, 1287395956);
+				throw new \TYPO3\CouchDB\Client\NotFoundException($body, 1287395956);
 			case 409: // Conflict
 			case 412: // Precondition Failed - we just consider this as a conflict.
-				throw new \F3\CouchDB\Client\ConflictException($body, 1287395905);
+				throw new \TYPO3\CouchDB\Client\ConflictException($body, 1287395905);
 			case 400:
-				throw new \F3\CouchDB\Client\ClientException($body, 1301496145);
+				throw new \TYPO3\CouchDB\Client\ClientException($body, 1301496145);
 			default:
 					// All other unhandled HTTP codes are for now handled as an error.
 					// This may not be true, as lots of other status code may be used

@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Log\Backend;
+namespace TYPO3\CouchDB\Tests\Functional\Log\Backend;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -30,7 +30,7 @@ namespace F3\CouchDB\Tests\Functional\Log\Backend;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class CouchDbBackendTest extends \F3\FLOW3\Tests\FunctionalTestCase {
+class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 
 	/**
 	 * @var string
@@ -43,12 +43,12 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	protected $dataSourceName = 'http://127.0.0.1:5984';
 
 	/**
-	 * @var \F3\CouchDB\Client
+	 * @var \TYPO3\CouchDB\Client
 	 */
 	protected $client;
 
 	/**
-	 * @var \F3\CouchDB\Log\Backend\CouchDbBackend
+	 * @var \TYPO3\CouchDB\Log\Backend\CouchDbBackend
 	 */
 	protected $backend;
 
@@ -57,12 +57,12 @@ class CouchDbBackendTest extends \F3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function setUp() {
-		$this->client = $this->objectManager->create('F3\CouchDB\Client', $this->dataSourceName);
+		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
 		$this->client->setDatabaseName($this->databaseName);
 		if ($this->client->databaseExists($this->databaseName)) {
 			$this->client->deleteDatabase($this->databaseName);
 		}
-		$this->backend = $this->objectManager->create('F3\CouchDB\Log\Backend\CouchDbBackend', array('databaseName' => $this->databaseName, 'dataSourceName' => $this->dataSourceName));
+		$this->backend = $this->objectManager->create('TYPO3\CouchDB\Log\Backend\CouchDbBackend', array('databaseName' => $this->databaseName, 'dataSourceName' => $this->dataSourceName));
 		$this->backend->open();
 	}
 

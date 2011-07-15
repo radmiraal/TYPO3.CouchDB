@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Index;
+namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Index;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -28,7 +28,7 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Index;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope singleton
  */
-class TestIndex extends \F3\CouchDB\Domain\Index\LuceneIndex {
+class TestIndex extends \TYPO3\CouchDB\Domain\Index\LuceneIndex {
 
 	/**
 	 * Configure the index
@@ -37,7 +37,7 @@ class TestIndex extends \F3\CouchDB\Domain\Index\LuceneIndex {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function configure() {
-		$this->forEntity('F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity')
+		$this->forEntity('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity')
 			->indexProperty('name')
 			->indexProperty('relatedValueObject.color');
 	}

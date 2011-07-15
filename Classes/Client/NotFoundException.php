@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Client;
+namespace TYPO3\CouchDB\Client;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -29,7 +29,7 @@ namespace F3\CouchDB\Client;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class NotFoundException extends \F3\CouchDB\Client\ClientException {
+class NotFoundException extends \TYPO3\CouchDB\Client\ClientException {
 
 	/**
 	 * @var string

@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
+namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -38,29 +38,29 @@ class TestEntity {
 
 	/**
 	 *
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
+	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
 	 */
 	protected $relatedValueObjectWithReference;
 
 	/**
 	 *
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
+	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
 	 */
 	protected $relatedValueObject;
 
 	/**
 	 *
-	 * @var array<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
+	 * @var array<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
 	 */
 	protected $relatedValueObjects;
 
 	/**
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
 	 */
 	protected $relatedEntity;
 
 	/**
-	 * @var \SplObjectStorage<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 * @var \SplObjectStorage<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
 	 */
 	protected $relatedEntities;
 
@@ -86,14 +86,14 @@ class TestEntity {
 	}
 
 	/**
-	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 * @return \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
 	 */
 	public function getRelatedEntity() {
 		return $this->relatedEntity;
 	}
 
 	/**
-	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $relatedEntity
+	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $relatedEntity
 	 */
 	public function setRelatedEntity($relatedEntity) {
 		$this->relatedEntity = $relatedEntity;
@@ -101,7 +101,7 @@ class TestEntity {
 
 	/**
 	 *
-	 * @return \SplObjectStorage<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 * @return \SplObjectStorage<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
 	 */
 	public function getRelatedEntities() {
 		return $this->relatedEntities;
@@ -109,7 +109,7 @@ class TestEntity {
 
 	/**
 	 *
-	 * @param \SplObjectStorage<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity> $relatedEntities
+	 * @param \SplObjectStorage<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity> $relatedEntities
 	 */
 	public function setRelatedEntities($relatedEntities) {
 		$this->relatedEntities = $relatedEntities;
@@ -117,7 +117,7 @@ class TestEntity {
 
 	/**
 	 *
-	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
+	 * @return \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
 	 */
 	public function getRelatedValueObject() {
 		return $this->relatedValueObject;
@@ -125,7 +125,7 @@ class TestEntity {
 
 	/**
 	 *
-	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject $relatedValueObject
+	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject $relatedValueObject
 	 */
 	public function setRelatedValueObject($relatedValueObject) {
 		$this->relatedValueObject = $relatedValueObject;
@@ -133,7 +133,7 @@ class TestEntity {
 
 	/**
 	 *
-	 * @return array<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
+	 * @return array<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
 	 */
 	public function getRelatedValueObjects() {
 		return $this->relatedValueObjects;
@@ -141,21 +141,21 @@ class TestEntity {
 
 	/**
 	 *
-	 * @param array<\F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject> $relatedValueObjects
+	 * @param array<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject> $relatedValueObjects
 	 */
 	public function setRelatedValueObjects($relatedValueObjects) {
 		$this->relatedValueObjects = $relatedValueObjects;
 	}
 
 	/**
-	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
+	 * @return \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
 	 */
 	public function getRelatedValueObjectWithReference() {
 		return $this->relatedValueObjectWithReference;
 	}
 
 	/**
-	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference $relatedValueObjectWithReference
+	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference $relatedValueObjectWithReference
 	 */
 	public function setRelatedValueObjectWithReference($relatedValueObjectWithReference) {
 		$this->relatedValueObjectWithReference = $relatedValueObjectWithReference;

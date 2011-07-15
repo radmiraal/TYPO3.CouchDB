@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB;
+namespace TYPO3\CouchDB;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -32,13 +32,13 @@ class Client {
 
 	/**
 	 * @inject
-	 * @var \F3\FLOW3\Object\ObjectManagerInterface
+	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
 	 *
-	 * @var \F3\CouchDB\Client\HttpConnector
+	 * @var \TYPO3\CouchDB\Client\HttpConnector
 	 */
 	protected $connector;
 
@@ -72,7 +72,7 @@ class Client {
 		$port = isset($urlParts['port']) ? $urlParts['port'] : NULL;
 		$username = isset($urlParts['user']) ? $urlParts['user'] : NULL;
 		$password = isset($urlParts['pass']) ? $urlParts['pass'] : NULL;
-		$this->connector = $this->objectManager->create('F3\CouchDB\Client\HttpConnector', $host, $port, $username, $password, $this->options);
+		$this->connector = $this->objectManager->create('TYPO3\CouchDB\Client\HttpConnector', $host, $port, $username, $password, $this->options);
 	}
 
 	/**
@@ -94,7 +94,7 @@ class Client {
 	 */
 	public function createDatabase($databaseName) {
 		$response = $this->connector->put('/' . urlencode($databaseName));
-		return $response instanceof \F3\CouchDB\Client\StatusResponse && $response->isSuccess();
+		return $response instanceof \TYPO3\CouchDB\Client\StatusResponse && $response->isSuccess();
 	}
 
 	/**
@@ -106,7 +106,7 @@ class Client {
 	 */
 	public function deleteDatabase($databaseName) {
 		$response = $this->connector->delete('/' . urlencode($databaseName));
-		return $response instanceof \F3\CouchDB\Client\StatusResponse && $response->isSuccess();
+		return $response instanceof \TYPO3\CouchDB\Client\StatusResponse && $response->isSuccess();
 	}
 
 	/**
@@ -131,7 +131,7 @@ class Client {
 		try {
 			$information = $this->databaseInformation($databaseName);
 			return is_object($information) && $information->db_name === $databaseName;
-		} catch(\F3\CouchDB\Client\NotFoundException $e) {
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $e) {
 			return FALSE;
 		}
 	}
@@ -185,7 +185,7 @@ class Client {
 	 *
 	 * @param mixed $document The document as a string, array or object
 	 * @param mixed $id An optional id to use for the document
-	 * @return \F3\CouchDB\Client\StatusResponse The creation response
+	 * @return \TYPO3\CouchDB\Client\StatusResponse The creation response
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
@@ -205,7 +205,7 @@ class Client {
 	 *
 	 * @param mixed $document The document as a string, array or object
 	 * @param string $id The document id
-	 * @return \F3\CouchDB\Client\StatusResponse The update response
+	 * @return \TYPO3\CouchDB\Client\StatusResponse The update response
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
@@ -306,7 +306,7 @@ class Client {
 	}
 
 	/**
-	 * @return \F3\CouchDB\Client\HttpConnector
+	 * @return \TYPO3\CouchDB\Client\HttpConnector
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getConnector() {
@@ -319,7 +319,7 @@ class Client {
 	 */
 	protected function getDatabaseName() {
 		if ($this->databaseName === NULL) {
-			throw new \F3\FLOW3\Persistence\Exception('No database name set', 1287349160);
+			throw new \TYPO3\FLOW3\Persistence\Exception('No database name set', 1287349160);
 		}
 		return $this->databaseName;
 	}

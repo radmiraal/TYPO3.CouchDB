@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
+namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -29,7 +29,7 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
  * @scope prototype
  * @entity
  */
-class TestEntitySubclass extends \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity {
+class TestEntitySubclass extends \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity {
 
 }
 ?>

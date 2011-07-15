@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB;
+namespace TYPO3\CouchDB;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -28,10 +28,10 @@ namespace F3\CouchDB;
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @scope prototype
  */
-class QueryView implements \F3\CouchDB\ViewInterface {
+class QueryView implements \TYPO3\CouchDB\ViewInterface {
 
 	/**
-	 * @var \F3\FLOW3\Reflection\ReflectionService
+	 * @var \TYPO3\FLOW3\Reflection\ReflectionService
 	 * @inject
 	 */
 	protected $reflectionService;
@@ -54,9 +54,9 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\QueryInterface $query
+	 * @param \TYPO3\FLOW3\Persistence\QueryInterface $query
 	 */
-	public function __construct(\F3\FLOW3\Persistence\QueryInterface $query) {
+	public function __construct(\TYPO3\FLOW3\Persistence\QueryInterface $query) {
 		$constraint = $query->getConstraint();
 		$this->type = $query->getType();
 		if ($constraint !== NULL) {
@@ -70,18 +70,18 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
+	 * @param \TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return array
 	 */
-	protected function buildEmitsForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
+	protected function buildEmitsForConstraint(\TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
 		$emits = array();
-		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
-			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
+		if ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\Comparison) {
+			if ($constraint->getOperator() === \TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				$emits[] = $this->buildEmitForOperand($constraint->getOperand1());
 			} else {
 				throw new \InvalidArgumentException('Operator ' . $constraint->getOperator() . ' is not supported by CouchDB QueryView', 1286466452);
 			}
-		} elseif($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
+		} elseif($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			$emit = new \stdClass();
 			$emit->type = 'and';
 			$emit->constraints = array_merge(
@@ -97,12 +97,12 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Generic\Qom\Operand $operand
+	 * @param \TYPO3\FLOW3\Persistence\Generic\Qom\Operand $operand
 	 * @return \stdClass
 	 */
-	protected function buildEmitForOperand(\F3\FLOW3\Persistence\Generic\Qom\Operand $operand) {
+	protected function buildEmitForOperand(\TYPO3\FLOW3\Persistence\Generic\Qom\Operand $operand) {
 		$emit = new \stdClass();
-		if ($operand instanceof \F3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
+		if ($operand instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
 			$emit->type = 'property';
 			$emit->property = $operand->getPropertyName();
 		} else {
@@ -113,17 +113,17 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
+	 * @param \TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return string
 	 */
-	protected function buildNameForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
-		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
-			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
-				if ($constraint->getOperand1() instanceof \F3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
+	protected function buildNameForConstraint(\TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
+		if ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\Comparison) {
+			if ($constraint->getOperator() === \TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
+				if ($constraint->getOperand1() instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
 					return 'equals<' . $constraint->getOperand1()->getPropertyName() . '>';
 				}
 			}
-		} elseif ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
+		} elseif ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			return 'and<' . $this->buildNameForConstraint($constraint->getConstraint1()) . ',' . $this->buildNameForConstraint($constraint->getConstraint2()) . '>';
 		}
 		return '';
@@ -131,15 +131,15 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 
 	/**
 	 *
-	 * @param \F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
+	 * @param \TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
 	 * @return mixed
 	 */
-	protected function buildKeyForConstraint(\F3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
-		if ($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\Comparison) {
-			if ($constraint->getOperator() === \F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
+	protected function buildKeyForConstraint(\TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
+		if ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\Comparison) {
+			if ($constraint->getOperator() === \TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				return $this->buildKeyForOperand($constraint->getOperand2());
 			}
-		} elseif($constraint instanceof \F3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
+		} elseif($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
 			return array(
 				$this->buildKeyForConstraint($constraint->getConstraint1()),
 				$this->buildKeyForConstraint($constraint->getConstraint2())
@@ -189,7 +189,7 @@ class QueryView implements \F3\CouchDB\ViewInterface {
 	 * @return array CouchDB view query parameters
 	 */
 	public function buildViewParameters(array $arguments) {
-		if (isset($arguments['query']) && $arguments['query'] instanceof \F3\FLOW3\Persistence\QueryInterface) {
+		if (isset($arguments['query']) && $arguments['query'] instanceof \TYPO3\FLOW3\Persistence\QueryInterface) {
 			$query = $arguments['query'];
 
 			if (isset($arguments['count']) && $arguments['count'] === TRUE) {

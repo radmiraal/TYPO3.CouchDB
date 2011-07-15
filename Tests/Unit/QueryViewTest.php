@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Unit;
+namespace TYPO3\CouchDB\Tests\Unit;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -27,17 +27,17 @@ namespace F3\CouchDB\Tests\Unit;
  *
  * @license http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3 or later
  */
-class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
+class QueryViewTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
 	 */
 	public function designNameIsFLOW3() {
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$this->assertEquals('FLOW3', $queryView->getDesignName());
 	}
@@ -46,29 +46,29 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function queryEmitsOnlyDocumentsWithClassnameOfType() {
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$mockReflectionService = $this->getMock('F3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
 		$mockReflectionService->expects($this->any())->method('getAllSubClassNamesForClass')->will($this->returnValue(array()));
 
-		$queryView = $this->getAccessibleMock('F3\CouchDB\QueryView', array('dummy'), array($mockQuery));
+		$queryView = $this->getAccessibleMock('TYPO3\CouchDB\QueryView', array('dummy'), array($mockQuery));
 		$queryView->_set('reflectionService', $mockReflectionService);
 
 		$mapSource = $queryView->getMapFunctionSource();
-		$this->assertRegExp('/^function\(doc\)\s?\{\s?if\s?\(!doc._deleted&&doc\.classname\s?==\s?"F3\\\\\\\CouchDB\\\\\\\Tests\\\\\\\Unit\\\\\\\TestEntity"\)\s?\{.*\}\s?\}$/', $mapSource);
+		$this->assertRegExp('/^function\(doc\)\s?\{\s?if\s?\(!doc._deleted&&doc\.classname\s?==\s?"TYPO3\CouchDB\\\\\\\CouchDB\\\\\\\Tests\\\\\\\Unit\\\\\\\TestEntity"\)\s?\{.*\}\s?\}$/', $mapSource);
 	}
 
 	/**
 	 * @test
 	 */
 	public function emptyQueryEmitsDocumentIdAndNull() {
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$emitStatements = $queryView->getEmitStatements();
 		$this->assertEquals('emit(doc._id,null);', $emitStatements);
@@ -78,14 +78,14 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function emptyQueryReturnsViewNameWithoutConstraints() {
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$viewName = $queryView->getViewName();
-		$this->assertEquals('query_F3\\CouchDB\\Tests\\Unit\\TestEntity', $viewName);
+		$this->assertEquals('query_TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity', $viewName);
 	}
 
 	/**
@@ -98,18 +98,18 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function singleEqualsConstraintEmitsPropertyValueAsKey() {
-		$mockOperand = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
+		$mockOperand = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
 		$mockOperand->expects($this->any())->method('getPropertyName')->will($this->returnValue('name'));
 
-		$mockConstraint = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
-		$mockConstraint->expects($this->any())->method('getOperator')->will($this->returnValue(\F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
+		$mockConstraint = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
+		$mockConstraint->expects($this->any())->method('getOperator')->will($this->returnValue(\TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
 		$mockConstraint->expects($this->any())->method('getOperand1')->will($this->returnValue($mockOperand));
 
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue($mockConstraint));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$emitStatements = $queryView->getEmitStatements();
 		$this->assertEquals('emit(doc.properties["name"].value,null);', $emitStatements);
@@ -125,19 +125,19 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function singleEqualsConstraintQueriesKey() {
-		$mockOperand = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
+		$mockOperand = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
 		$mockOperand->expects($this->any())->method('getPropertyName')->will($this->returnValue('name'));
 
-		$mockConstraint = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
-		$mockConstraint->expects($this->any())->method('getOperator')->will($this->returnValue(\F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
+		$mockConstraint = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
+		$mockConstraint->expects($this->any())->method('getOperator')->will($this->returnValue(\TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
 		$mockConstraint->expects($this->any())->method('getOperand1')->will($this->returnValue($mockOperand));
 		$mockConstraint->expects($this->any())->method('getOperand2')->will($this->returnValue('Test'));
 
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue($mockConstraint));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$viewParameters = $queryView->buildViewParameters(array('query' => $mockQuery));
 		$expectedParameters = array(
@@ -158,31 +158,31 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logicalAndWithEqualConstraintsEmitsPropertyValuesAsArrayKey() {
-		$mockOperand1 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
+		$mockOperand1 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
 		$mockOperand1->expects($this->any())->method('getPropertyName')->will($this->returnValue('name'));
 
-		$mockOperand2 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
+		$mockOperand2 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
 		$mockOperand2->expects($this->any())->method('getPropertyName')->will($this->returnValue('bar'));
 
-		$mockConstraint1 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
-		$mockConstraint1->expects($this->any())->method('getOperator')->will($this->returnValue(\F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
+		$mockConstraint1 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
+		$mockConstraint1->expects($this->any())->method('getOperator')->will($this->returnValue(\TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
 		$mockConstraint1->expects($this->any())->method('getOperand1')->will($this->returnValue($mockOperand1));
 		$mockConstraint1->expects($this->any())->method('getOperand2')->will($this->returnValue('Foo'));
 
-		$mockConstraint2 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
-		$mockConstraint2->expects($this->any())->method('getOperator')->will($this->returnValue(\F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
+		$mockConstraint2 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
+		$mockConstraint2->expects($this->any())->method('getOperator')->will($this->returnValue(\TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
 		$mockConstraint2->expects($this->any())->method('getOperand1')->will($this->returnValue($mockOperand2));
 		$mockConstraint2->expects($this->any())->method('getOperand2')->will($this->returnValue('Baz'));
 
-		$mockAndConstraint = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\LogicalAnd', array(), array(), '', FALSE);
+		$mockAndConstraint = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\LogicalAnd', array(), array(), '', FALSE);
 		$mockAndConstraint->expects($this->any())->method('getConstraint1')->will($this->returnValue($mockConstraint1));
 		$mockAndConstraint->expects($this->any())->method('getConstraint2')->will($this->returnValue($mockConstraint2));
 
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue($mockAndConstraint));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$emitStatements = $queryView->getEmitStatements();
 		$this->assertEquals('emit([doc.properties["name"].value,doc.properties["bar"].value],null);', $emitStatements);
@@ -198,31 +198,31 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logicalAndWithEqualConstraintsQueriesArrayKey() {
-		$mockOperand1 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
+		$mockOperand1 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
 		$mockOperand1->expects($this->any())->method('getPropertyName')->will($this->returnValue('name'));
 
-		$mockOperand2 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
+		$mockOperand2 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue', array(), array(), '', FALSE);
 		$mockOperand2->expects($this->any())->method('getPropertyName')->will($this->returnValue('bar'));
 
-		$mockConstraint1 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
-		$mockConstraint1->expects($this->any())->method('getOperator')->will($this->returnValue(\F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
+		$mockConstraint1 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
+		$mockConstraint1->expects($this->any())->method('getOperator')->will($this->returnValue(\TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
 		$mockConstraint1->expects($this->any())->method('getOperand1')->will($this->returnValue($mockOperand1));
 		$mockConstraint1->expects($this->any())->method('getOperand2')->will($this->returnValue('Foo'));
 
-		$mockConstraint2 = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
-		$mockConstraint2->expects($this->any())->method('getOperator')->will($this->returnValue(\F3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
+		$mockConstraint2 = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\Comparison', array(), array(), '', FALSE);
+		$mockConstraint2->expects($this->any())->method('getOperator')->will($this->returnValue(\TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO));
 		$mockConstraint2->expects($this->any())->method('getOperand1')->will($this->returnValue($mockOperand2));
 		$mockConstraint2->expects($this->any())->method('getOperand2')->will($this->returnValue('Baz'));
 
-		$mockAndConstraint = $this->getMock('F3\FLOW3\Persistence\Generic\Qom\LogicalAnd', array(), array(), '', FALSE);
+		$mockAndConstraint = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Qom\LogicalAnd', array(), array(), '', FALSE);
 		$mockAndConstraint->expects($this->any())->method('getConstraint1')->will($this->returnValue($mockConstraint1));
 		$mockAndConstraint->expects($this->any())->method('getConstraint2')->will($this->returnValue($mockConstraint2));
 
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue($mockAndConstraint));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$viewParameters = $queryView->buildViewParameters(array('query' => $mockQuery));
 		$expectedParameters = array(
@@ -240,11 +240,11 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function reduceFunctionUsesBuiltinCountFunction() {
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$this->assertEquals('_count', $queryView->getReduceFunctionSource());
 	}
@@ -253,11 +253,11 @@ class QueryViewTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function countArgumentUsesReduceOnView() {
-		$mockQuery = $this->getMock('F3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
-		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('F3\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
-		$queryView = new \F3\CouchDB\QueryView($mockQuery);
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$viewParameters = $queryView->buildViewParameters(array('query' => $mockQuery, 'count' => TRUE));
 		$expectedParameters = array(

@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
+namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -32,19 +32,19 @@ namespace F3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
 class TestValueObjectWithReference {
 
 	/**
-	 * @var \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
 	 */
     protected $entity;
 
 	/**
-	 * @param \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $entity
+	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $entity
 	 */
 	public function __construct($entity) {
 		$this->entity = $entity;
 	}
 
 	/**
-	 * @return \F3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 * @return \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
 	 */
 	public function getEntity() {
 		return $this->entity;

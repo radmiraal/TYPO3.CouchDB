@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace F3\CouchDB\Tests\Unit\Client;
+namespace TYPO3\CouchDB\Tests\Unit\Client;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -27,10 +27,10 @@ namespace F3\CouchDB\Tests\Unit\Client;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class HttpConnectorTest extends \F3\FLOW3\Tests\UnitTestCase {
+class HttpConnectorTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
-	 * @var \F3\CouchDB\Client\HttpConnector
+	 * @var \TYPO3\CouchDB\Client\HttpConnector
 	 */
 	protected $connector;
 
@@ -38,7 +38,7 @@ class HttpConnectorTest extends \F3\FLOW3\Tests\UnitTestCase {
 	 * Setup a CouchDB HTTP connector
 	 */
 	public function setUp() {
-		$this->connector = new \F3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
+		$this->connector = new \TYPO3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
 		$this->connector->put('/flow3_test');
 	}
 
