@@ -203,7 +203,7 @@ class HttpConnector {
 		if ($data !== NULL) {
 			$request .= "Content-type: application/json\r\n";
 			$request .= "Content-Length: " . strlen($data) . "\r\n\r\n";
-			$request .= $data . "\r\n";
+			$request .= $data;
 		} else {
 			$request .= "\r\n";
 		}
@@ -278,7 +278,7 @@ class HttpConnector {
 				list($key, $value) = explode(':', $lineContent, 2);
 				$headers[strtolower( $key )] = ltrim($value);
 			}
-		} while ((($line = fgets( $this->connection)) !== FALSE) && (($lineContent = rtrim($line)) !== ''));
+		} while ((($line = fgets($this->connection)) !== FALSE) && (($lineContent = rtrim($line)) !== ''));
 
 			// Read response body
 		$body = '';
