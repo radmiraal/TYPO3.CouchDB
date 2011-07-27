@@ -143,7 +143,8 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 
 		if ($objectState === self::OBJECTSTATE_NEW || $dirty) {
 			$this->validateObject($object);
-			$this->storeObjectDocument($objectData);
+			$revision = $this->storeObjectDocument($objectData);
+			$this->setRevisionMetadata($object, $revision);
 		}
 
 		return $objectState;
@@ -163,11 +164,26 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	}
 
 	/**
+	 * Set metadata for the stored revision on the AOP proxy to resolve
+	 * document update conflicts after explicit calls to persistAll().
+	 *
+	 * @param object $object
+	 * @param string $revision
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function setRevisionMetadata($object, $revision) {
+		$object->FLOW3_Persistence_Metadata = array(
+			'CouchDB_Revision' => $revision
+		);
+	}
+
+	/**
 	 * Creates or updates a document for the given object data. An update is
 	 * done by using the revision inside the metadata of the object.
 	 *
 	 * @param array $objectData The object data for the object to store
-	 * @return string The identifier of the created record
+	 * @return string The revision of the created record
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @todo Catch exceptions for conflicts when updating the document
 	 * @todo (Later) Try to use an update handler inside CouchDB for partial updates
@@ -181,11 +197,11 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		}
 		unset($objectData['metadata']);
 
-		$this->doOperation(function($client) use (&$objectData) {
-			$client->createDocument($objectData);
+		$result = $this->doOperation(function($client) use (&$objectData) {
+			return $client->createDocument($objectData);
 		});
 
-		return $objectData['_id'];
+		return $result->getRevision();
 	}
 
 	/**

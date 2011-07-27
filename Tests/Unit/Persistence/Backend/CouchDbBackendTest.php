@@ -105,9 +105,8 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->atLeastOnce())
 			->method('hasObject')
-			->with($object)
 			->will($this->returnValue(FALSE));
-		$mockPersistenceSession->expects($this->once())->method('registerObject')->with($object, $identifier);
+		$mockPersistenceSession->expects($this->once())->method('registerObject')->with($this->anything(), $identifier);
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
 		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
@@ -135,7 +134,6 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())
 			->method('hasObject')
-			->with($object)
 			->will($this->returnValue(FALSE));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
@@ -143,10 +141,10 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$backend->injectPersistenceSession($mockPersistenceSession);
 
 		$collectedProperties = array('foo' => 'bar', 'bar' => 'baz');
-		$backend->expects($this->any())->method('collectProperties')->with($identifier, $object, $classSchemaProperties, FALSE)->will($this->returnValue($collectedProperties));
+		$backend->expects($this->any())->method('collectProperties')->with($identifier, $this->anything(), $classSchemaProperties, FALSE)->will($this->returnValue($collectedProperties));
 
 		$collectedMetadata = array('metadata' => 'foo');
-		$backend->expects($this->any())->method('collectMetadata')->with($object)->will($this->returnValue($collectedMetadata));
+		$backend->expects($this->any())->method('collectMetadata')->will($this->returnValue($collectedMetadata));
 
 		$objectData = array();
 		$parentIdentifier = 'xyz';
@@ -185,6 +183,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	public function storeObjectDocumentCreatesDocumentFromObjectData() {
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockResponse = $this->getMock('TYPO3\CouchDB\Client\StatusResponse', array(), array(), '', FALSE);
 
 		$objectData = array(
 			'identifier' => 'abcdefg',
@@ -203,7 +202,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 			)
 		);
 
-		$mockClient->expects($this->once())->method('createDocument')->with($documentData);
+		$mockClient->expects($this->once())->method('createDocument')->with($documentData)->will($this->returnValue($mockResponse));
 
 		$backend->_set('client', $mockClient);
 
@@ -218,6 +217,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	public function storeObjectDocumentCreatesNewDocumentFromObjectDataIfNoRevisionInMetadata() {
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockResponse = $this->getMock('TYPO3\CouchDB\Client\StatusResponse', array(), array(), '', FALSE);
 
 		$objectData = array(
 			'identifier' => 'abcdefg',
@@ -234,7 +234,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 			)
 		);
 
-		$mockClient->expects($this->once())->method('createDocument')->with($documentData);
+		$mockClient->expects($this->once())->method('createDocument')->with($documentData)->will($this->returnValue($mockResponse));
 
 		$backend->_set('client', $mockClient);
 
