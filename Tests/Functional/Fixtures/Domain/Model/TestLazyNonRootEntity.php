@@ -1,6 +1,6 @@
 <?php
 declare(ENCODING = 'utf-8');
-namespace TYPO3\CouchDB\Client;
+namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
 
 /*                                                                        *
  * This script belongs to the FLOW3 package "CouchDB".                    *
@@ -23,62 +23,14 @@ namespace TYPO3\CouchDB\Client;
  *                                                                        */
 
 /**
- * A raw response object
- *
- * Some code borrowed from phpillow project.
+ * A lazy non aggregate root test entity for functional tests
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
+ * @scope prototype
+ * @entity
+ * @lazy
  */
-class RawResponse {
-
-	/**
-	 * @var string
-	 */
-	protected $contentType;
-
-	/**
-	 * @var string
-	 */
-	protected $data;
-
-	/**
-	 * @var string
-	 */
-	protected $revision;
-
-	/**
-	 * @param array $headers
-	 * @param string $body
-	 */
-	public function __construct(array $headers, $body) {
-		$this->contentType = $headers['content-type'];
-		if (isset($headers['etag'])) {
-			$this->revision = trim($headers['etag'], '"');
-		}
-		$this->data = $body;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getContentType() {
-		return $this->contentType;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getData() {
-		return $this->data;
-	}
-
-	/**
-	 * Get the revision / etag of the response (if sent)
-	 * @return string
-	 */
-	public function getRevision() {
-		return $this->revision;
-	}
+class TestLazyNonRootEntity extends TestNonRootEntity {
 
 }
 ?>

@@ -162,6 +162,17 @@ class Client {
 	}
 
 	/**
+	 * Get information about a document (HEAD)
+	 *
+	 * @param string $id
+	 * @return \TYPO3\CouchDB\Client\RawResponse
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getDocumentInformation($id) {
+		return $this->connector->head('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), NULL, NULL, array('raw' => TRUE));
+	}
+
+	/**
 	 * Get multiple documents by id.
 	 *
 	 * Use include_docs => TRUE as query option to fetch the documents.

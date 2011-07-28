@@ -145,9 +145,29 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			$this->validateObject($object);
 			$revision = $this->storeObjectDocument($objectData);
 			$this->setRevisionMetadata($object, $revision);
+			$objectData['metadata']['CouchDB_Revision'] = $revision;
 		}
 
 		return $objectState;
+	}
+
+	/**
+	 * Iterate over deleted entities and process them.
+	 * This method overrides the default behaviour by really
+	 *
+	 * @return void
+	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function processDeletedObjects() {
+		foreach ($this->deletedEntities as $entity) {
+			if ($this->persistenceSession->hasObject($entity)) {
+				$this->reallyRemoveEntity($entity);
+				$this->persistenceSession->unregisterReconstitutedEntity($entity);
+				$this->persistenceSession->unregisterObject($entity);
+			}
+		}
+		$this->deletedEntities = new \SplObjectStorage();
 	}
 
 	/**
@@ -248,23 +268,32 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 				$object = $this->persistenceSession->getObjectByIdentifier($row->id);
 				if ($this->classSchemata[get_class($object)]->getModelType() === \TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY
 						&& $this->classSchemata[get_class($object)]->isAggregateRoot() === FALSE) {
-					$this->removeEntity($object);
+					$this->reallyRemoveEntity($object);
 				}
 			};
 		}
 	}
 
 	/**
-	 * Removes an entity
+	 * Removes the document for an entity and also removes all entities that
+	 * belong to this object as a parent and are not an aggregate root.
+	 *
+	 * If the revision of an object is not set (e.g. for lazy references)
+	 * the revision will be fetched.
 	 *
 	 * @param object $object An object
 	 * @return void
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function removeEntity($object) {
+	protected function reallyRemoveEntity($object) {
 		$identifier = $this->persistenceSession->getIdentifierByObject($object);
 		$revision = $this->getRevisionByObject($object);
+
+		if ($revision === NULL) {
+			$rawResponse = $this->client->getDocumentInformation($identifier);
+			$revision = $rawResponse->getRevision();
+		}
 
 		$this->removeEntitiesByParent($identifier);
 
@@ -276,6 +305,18 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	}
 
 	/**
+	 * Implement remove entity by attaching entities to
+	 * the list of to be deleted entities. This works as long as
+	 * commit first persists and then deletes objects.
+	 *
+	 * @param object $object
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function removeEntity($object) {
+		$this->deletedEntities->attach($object);
+	}
+
+	/**
 	 * Remove a value object. Does nothing for CouchDB, since value objects
 	 * are embedded in documents.
 	 *
@@ -283,6 +324,20 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return void
 	 */
 	protected function removeValueObject($object) {}
+
+	/**
+	 *
+	 * @param type $object
+	 * @param type $objectState
+	 * @return void
+	 */
+	protected function emitPersistedObject($object, $objectState) {
+		if (property_exists($object, 'FLOW3_Persistence_clone') && $object->FLOW3_Persistence_clone === TRUE) {
+				// Detach any deleted entity that has been merged afterwards
+			$this->deletedEntities->detach($object);
+		}
+		parent::emitPersistedObject($object, $objectState);
+	}
 
 	/**
 	 * Process object data for an object
@@ -429,7 +484,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * Returns the object data for the given identifier.
 	 *
 	 * @param string $identifier The UUID or Hash of the object
-	 * @return array
+	 * @return array The object data of the object or FALSE if the identifier was not found
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @todo Maybe introduce a ObjectNotFound exception?
 	 */
@@ -442,7 +497,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			$doc = NULL;
 		}
 		if ($doc === NULL) {
-			throw new \TYPO3\FLOW3\Persistence\Exception\UnknownObjectException('Unknown object with identifier ' . $identifier, 1286902479);
+			return FALSE;
 		}
 		$data = $this->documentsToObjectData(array($doc));
 		return $data[0];

@@ -265,5 +265,18 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$row = $response->rows[1];
 		$this->assertEquals('Baz', $row->doc->name);
 	}
+
+	/**
+	 * @test
+	 */
+	public function getDocumentInformationWorks() {
+		$response = $this->client->createDocument(array(
+			'name' => 'Bar'
+		));
+		$id = $response->getId();
+		$information = $this->client->getDocumentInformation($id);
+		$this->assertEquals($response->getRevision(), $information->getRevision());
+	}
+
 }
 ?>

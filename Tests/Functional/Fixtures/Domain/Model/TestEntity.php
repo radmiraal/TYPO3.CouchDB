@@ -37,19 +37,16 @@ class TestEntity {
 	protected $name;
 
 	/**
-	 *
 	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObjectWithReference
 	 */
 	protected $relatedValueObjectWithReference;
 
 	/**
-	 *
 	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject
 	 */
 	protected $relatedValueObject;
 
 	/**
-	 *
 	 * @var array<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject>
 	 */
 	protected $relatedValueObjects;
@@ -60,9 +57,26 @@ class TestEntity {
 	protected $relatedEntity;
 
 	/**
-	 * @var \SplObjectStorage<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 * @var \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
 	 */
 	protected $relatedEntities;
+
+	/**
+	 * @var \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestNonRootEntity>
+	 */
+	protected $relatedNonRootEntities;
+
+	/**
+	 * @var \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity>
+	 * @lazy
+	 */
+	protected $relatedLazyNonRootEntities;
+
+	/**
+	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity
+	 * @lazy
+	 */
+	protected $relatedLazyNonRootEntity;
 
 	/**
 	 * @var array
@@ -95,13 +109,13 @@ class TestEntity {
 	/**
 	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $relatedEntity
 	 */
-	public function setRelatedEntity($relatedEntity) {
+	public function setRelatedEntity(TestEntity $relatedEntity = NULL) {
 		$this->relatedEntity = $relatedEntity;
 	}
 
 	/**
 	 *
-	 * @return \SplObjectStorage<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 * @return \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
 	 */
 	public function getRelatedEntities() {
 		return $this->relatedEntities;
@@ -109,10 +123,56 @@ class TestEntity {
 
 	/**
 	 *
-	 * @param \SplObjectStorage<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity> $relatedEntities
+	 * @param \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
 	 */
 	public function setRelatedEntities($relatedEntities) {
 		$this->relatedEntities = $relatedEntities;
+	}
+
+	/**
+	 *
+	 * @return \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestNonRootEntity>
+	 */
+	public function getRelatedNonRootEntities() {
+		return $this->relatedNonRootEntities;
+	}
+
+	/**
+	 *
+	 * @param \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestNonRootEntity>
+	 */
+	public function setRelatedNonRootEntities($relatedNonRootEntities) {
+		$this->relatedNonRootEntities = $relatedNonRootEntities;
+	}
+
+	/**
+	 * @return \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity
+	 */
+	public function getRelatedLazyNonRootEntity() {
+		return $this->relatedLazyNonRootEntity;
+	}
+
+	/**
+	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity $relatedLazyNonRootEntity
+	 */
+	public function setRelatedLazyNonRootEntity(TestLazyNonRootEntity $relatedLazyNonRootEntity = NULL) {
+		$this->relatedLazyNonRootEntity = $relatedLazyNonRootEntity;
+	}
+
+	/**
+	 *
+	 * @return \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity>
+	 */
+	public function getRelatedLazyNonRootEntities() {
+		return $this->relatedLazyNonRootEntities;
+	}
+
+	/**
+	 *
+	 * @param \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity>
+	 */
+	public function setRelatedLazyNonRootEntities($relatedLazyNonRootEntities) {
+		$this->relatedLazyNonRootEntities = $relatedLazyNonRootEntities;
 	}
 
 	/**

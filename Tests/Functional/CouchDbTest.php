@@ -204,26 +204,25 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function nestedMultivalueSplObjectStorageEntityIsFetchedCorrectly() {
+	public function nestedMultivalueArrayCollectionEntityIsFetchedCorrectly() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
 		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
-		$entity->setName('Entity with nested SplObjectStorage entities');
-		$relatedEntities = new \SplObjectStorage();
+		$entity->setName('Entity with nested ArrayCollection entities');
+		$relatedEntities = new \Doctrine\Common\Collections\ArrayCollection();
 		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$relatedEntity->setName('Nested entity');
-		$relatedEntities->attach($relatedEntity);
+		$relatedEntities->add($relatedEntity);
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
 
 		$this->tearDown();
 
-		$fooEntity = $repository->findOneByName('Entity with nested SplObjectStorage entities');
+		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection entities');
 		$this->assertNotNull($fooEntity);
 		$this->assertNotNull($fooEntity->getRelatedEntities());
 		$this->assertEquals(1, count($fooEntity->getRelatedEntities()));
-		$fooEntity->getRelatedEntities()->rewind();
-		$barEntity = $fooEntity->getRelatedEntities()->current();
+		$barEntity = $fooEntity->getRelatedEntities()->first();
 		$this->assertNotNull($barEntity);
 		$this->assertEquals('Nested entity', $barEntity->getName());
 	}
@@ -232,20 +231,20 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function nestedMultivalueSplObjectStorageEntityWithBidirectionalAssociation() {
+	public function nestedMultivalueArrayCollectionEntityWithBidirectionalAssociation() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
 		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
-		$entity->setName('Entity with nested SplObjectStorage entities');
-		$relatedEntities = new \SplObjectStorage();
+		$entity->setName('Entity with nested ArrayCollection entities');
+		$relatedEntities = new \Doctrine\Common\Collections\ArrayCollection();
 		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$relatedEntity->setName('Nested entity 1');
 		$relatedEntity->setRelatedEntity($entity);
-		$relatedEntities->attach($relatedEntity);
+		$relatedEntities->add($relatedEntity);
 		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$relatedEntity->setName('Nested entity 2');
 		$relatedEntity->setRelatedEntity($entity);
-		$relatedEntities->attach($relatedEntity);
+		$relatedEntities->add($relatedEntity);
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
 
@@ -281,6 +280,135 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$this->assertEquals('Red', $relatedValueObjects[0]->getColor());
 		$this->assertNotNull($relatedValueObjects[1]);
 		$this->assertEquals('Blue', $relatedValueObjects[1]->getColor());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectByIdentifierWithUnknownIdentifierShouldNotThrowException() {
+		$this->assertNull($this->persistenceManager->getObjectByIdentifier('somenonexistentidentifier'));
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function deletingNestedMultivalueArrayCollectionNonRootEntityDeletesEntity() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Entity with nested ArrayCollection non root entities');
+		$relatedNonRootEntities = new \Doctrine\Common\Collections\ArrayCollection();
+		$relatedNonRootEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestNonRootEntity();
+		$relatedNonRootEntity->setName('Nested entity 1');
+		$relatedNonRootEntities->add($relatedNonRootEntity);
+		$entity->setRelatedNonRootEntities($relatedNonRootEntities);
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($relatedNonRootEntity);
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection non root entities');
+		$fooEntity->getRelatedNonRootEntities()->clear();
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection non root entities');
+		$this->assertEquals(0, count($fooEntity->getRelatedNonRootEntities()));
+
+		$this->assertTrue($this->persistenceManager->getObjectByIdentifier($identifier) === NULL, 'Assert nested entity was deleted');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function deletingLazyNestedMultivalueArrayCollectionNonRootEntityDeletesEntity() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Entity with nested ArrayCollection lazy non root entities');
+		$relatedNonRootEntities = new \Doctrine\Common\Collections\ArrayCollection();
+		$relatedNonRootEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity();
+		$relatedNonRootEntity->setName('Lazy entity 1');
+		$relatedNonRootEntities->add($relatedNonRootEntity);
+		$entity->setRelatedLazyNonRootEntities($relatedNonRootEntities);
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($relatedNonRootEntity);
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection lazy non root entities');
+		$fooEntity->getRelatedLazyNonRootEntities()->clear();
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection lazy non root entities');
+		$this->assertEquals(0, count($fooEntity->getRelatedLazyNonRootEntities()));
+
+		$this->assertTrue($this->persistenceManager->getObjectByIdentifier($identifier) === NULL, 'Assert lazy nested entity was deleted');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function unsettingLazyNestedNonRootEntityDeletesEntity() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Entity with nested lazy non root entity');
+		$relatedNonRootEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity();
+		$relatedNonRootEntity->setName('Lazy entity 1');
+		$entity->setRelatedLazyNonRootEntity($relatedNonRootEntity);
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($relatedNonRootEntity);
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
+		$fooEntity->setRelatedLazyNonRootEntity(NULL);
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
+		$this->assertTrue($fooEntity->getRelatedLazyNonRootEntity() === NULL, 'Related entity is unset');
+
+		$this->assertTrue($this->persistenceManager->getObjectByIdentifier($identifier) === NULL, 'Assert lazy nested entity was deleted');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function unsettingReferencedNestedNonRootEntityDoesNotDeleteEntity() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Entity with nested lazy non root entity');
+		$relatedLazyNonRootEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity();
+		$relatedLazyNonRootEntity->setName('Non root entity');
+		$entity->setRelatedLazyNonRootEntity($relatedLazyNonRootEntity);
+		$entity->setRelatedLazyNonRootEntities(new \Doctrine\Common\Collections\ArrayCollection(array($relatedLazyNonRootEntity)));
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($relatedLazyNonRootEntity);
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
+		$fooEntity->setRelatedLazyNonRootEntity(NULL);
+
+		$this->tearDown();
+
+		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
+		$this->assertTrue($fooEntity->getRelatedLazyNonRootEntity() === NULL, 'Related entity is unset');
+
+		$this->assertFalse($this->persistenceManager->getObjectByIdentifier($identifier) === NULL, 'Assert lazy nested entity was NOT deleted');
 	}
 
 	/**
