@@ -290,11 +290,6 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		$identifier = $this->persistenceSession->getIdentifierByObject($object);
 		$revision = $this->getRevisionByObject($object);
 
-		if ($revision === NULL) {
-			$rawResponse = $this->client->getDocumentInformation($identifier);
-			$revision = $rawResponse->getRevision();
-		}
-
 		$this->removeEntitiesByParent($identifier);
 
 		$this->doOperation(function($client) use ($identifier, $revision) {
@@ -377,7 +372,13 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		if (is_array($metadata) && isset($metadata['CouchDB_Revision'])) {
 			return $metadata['CouchDB_Revision'];
 		}
-		return NULL;
+		try {
+			$identifier = $this->persistenceSession->getIdentifierByObject($object);
+			$rawResponse = $this->client->getDocumentInformation($identifier);
+			return $rawResponse->getRevision();
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+			return NULL;
+		}
 	}
 
 	/**

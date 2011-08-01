@@ -143,7 +143,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$collectedProperties = array('foo' => 'bar', 'bar' => 'baz');
 		$backend->expects($this->any())->method('collectProperties')->with($identifier, $this->anything(), $classSchemaProperties, FALSE)->will($this->returnValue($collectedProperties));
 
-		$collectedMetadata = array('metadata' => 'foo');
+		$collectedMetadata = array('metadata' => 'foo', 'CouchDB_Revision' => '');
 		$backend->expects($this->any())->method('collectMetadata')->will($this->returnValue($collectedMetadata));
 
 		$objectData = array();
@@ -361,7 +361,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 		$mockClassSchema->expects($this->any())->method('isAggregateRoot')->will($this->returnValue(FALSE));
 
-		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity'));
+		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity', 'reallyRemoveEntity'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
 
@@ -374,7 +374,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$backend->expects($this->any())->method('getEntityByParentIdentifierView')->will($this->returnValue($mockEntityByParentIdentifierView));
 		$backend->expects($this->any())->method('queryView')->will($this->returnValue($result));
 
-		$backend->expects($this->once())->method('removeEntity')->with($mockObject);
+		$backend->expects($this->once())->method('reallyRemoveEntity')->with($mockObject);
 
 		$backend->_call('removeEntitiesByParent', 'abcdefg');
 	}
@@ -415,7 +415,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function removeEntityDeletesDocumentWithRevisionFromObject() {
+	public function reallyRemoveEntityDeletesDocumentWithRevisionFromObject() {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
 
@@ -431,14 +431,14 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 		$backend->_set('client', $mockClient);
 
-		$backend->_call('removeEntity', $mockObject);
+		$backend->_call('reallyRemoveEntity', $mockObject);
 	}
 
 	/**
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function removeEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
+	public function reallyRemoveEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
 
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
@@ -447,10 +447,11 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation', 'removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 
+		$backend->expects($this->any())->method('getRevisionByObject')->will($this->returnValue('7-abc'));
 		$backend->expects($this->once())->method('removeEntitiesByParent')->with('xyz');
 		$backend->expects($this->once())->method('emitRemovedObject')->with($mockObject);
 
-		$backend->_call('removeEntity', $mockObject);
+		$backend->_call('reallyRemoveEntity', $mockObject);
 	}
 
 	/**
@@ -557,14 +558,24 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getRevisionByObjectReturnsNullIfNoRevisionSet() {
+	public function getRevisionByObjectGetsRevisionFromCouchDbIfNoRevisionSet() {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
+		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
+		$mockResponse = $this->getMock('TYPO3\CouchDB\Client\RawResponse', array(), array(), '', FALSE);
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata'));
+		$backend->_set('client', $mockClient);
+		$backend->_set('persistenceSession', $mockPersistenceSession);
+
+		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('abc-def'));
+		$mockResponse->expects($this->any())->method('getRevision')->will($this->returnValue('42-xyz'));
+
 		$backend->expects($this->once())->method('collectMetadata')->with($mockObject)->will($this->returnValue(NULL));
+		$mockClient->expects($this->once())->method('getDocumentInformation')->with('abc-def')->will($this->returnValue($mockResponse));
 
 		$result = $backend->_call('getRevisionByObject', $mockObject);
-		$this->assertEquals(NULL, $result);
+		$this->assertEquals('42-xyz', $result);
 	}
 
 	/**
@@ -724,10 +735,9 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \TYPO3\FLOW3\Persistence\Exception\UnknownObjectException
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getObjectDataByIdentifierThrowsExceptionIfDocumentDoesntExist() {
+	public function getObjectDataByIdentifierReturnsFalseIfDocumentDoesntExist() {
 		$document = new \stdClass();
 		$document->_id = 'xyz';
 
@@ -737,7 +747,9 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('documentsToObjectData'));
 		$backend->_set('client', $mockClient);
 
-		$backend->getObjectDataByIdentifier('xyz');
+		$objectData = $backend->getObjectDataByIdentifier('xyz');
+
+		$this->assertFalse($objectData);
 	}
 
 	/**

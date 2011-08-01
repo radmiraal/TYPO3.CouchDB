@@ -275,7 +275,7 @@ class Client {
 	 */
 	public function queryIndex($underscoredIndexName, $indexType, array $queryOptions = NULL) {
 		$requestOptions = $this->extractRequestOptions($queryOptions);
-		$path = '/' . urlencode($this->getDatabaseName()) . '/_fti/_design/' . urlencode($underscoredIndexName) . '/search';
+		$path = '/_fti/local/' . urlencode($this->getDatabaseName()) . '/_design/' . urlencode($underscoredIndexName) . '/search';
 		return $this->connector->get($path, $queryOptions, NULL, $requestOptions);
 	}
 
