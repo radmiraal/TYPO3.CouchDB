@@ -507,6 +507,53 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	}
 
 	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function updateMappedEntity() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Foobar');
+		$repository->add($entity);
+
+		$identity = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDown();
+
+		$source = array('__identity' => $identity, 'name' => 'Foofoo');
+		$propertyMapper = $this->objectManager->get('TYPO3\FLOW3\Property\PropertyMapper');
+		$mappedEntity = $propertyMapper->convert($source, 'TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+
+		$repository->update($mappedEntity);
+
+		$this->assertEquals('Foofoo', $mappedEntity->getName());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function updateMappedEntityWithCycle() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Foobar');
+		$entity->setRelatedEntity($entity);
+		$repository->add($entity);
+
+		$identity = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDown();
+
+		$source = array('__identity' => $identity, 'name' => 'Foofoo');
+		$propertyMapper = $this->objectManager->get('TYPO3\FLOW3\Property\PropertyMapper');
+		$mappedEntity = $propertyMapper->convert($source, 'TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+
+		$repository->update($mappedEntity);
+
+		$this->assertEquals('Foofoo', $mappedEntity->getName());
+	}
+
+	/**
 	 * Delete the database
 	 *
 	 * @return void

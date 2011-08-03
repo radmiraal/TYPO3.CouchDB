@@ -114,6 +114,23 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	}
 
 	/**
+	 * Override persistObject of AbstractBackend to fix a problem with multiple
+	 * instances when merging objects and document update conflicts.
+	 *
+	 * @param object $object
+	 * @param string $parentIdentifier
+	 * @return string
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	protected function persistObject($object, $parentIdentifier) {
+		$identifier = $this->persistenceSession->getIdentifierByObject($object);
+		if ($this->persistenceSession->hasIdentifier($identifier) && $this->persistenceSession->getObjectByIdentifier($identifier) != $object) {
+			return $identifier;
+		}
+		return parent::persistObject($object, $parentIdentifier);
+	}
+
+	/**
 	 * Actually store an object, backend-specific
 	 *
 	 * @param object $object
@@ -121,6 +138,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @param string $parentIdentifier
 	 * @param array $objectData
 	 * @return integer one of self::OBJECTSTATE_*
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function storeObject($object, $identifier, $parentIdentifier, array &$objectData) {
 		if ($this->persistenceSession->hasObject($object)) {
