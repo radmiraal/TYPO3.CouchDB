@@ -148,20 +148,59 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	 * @param integer $offset
 	 * @param integer $limit
 	 * @param integer $severityThreshold
+	 * @param integer $fromTimestamp
+	 * @param integer $toTimestamp
 	 * @return array Log entries as array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function read($offset = 0, $limit = 100, $severityThreshold = LOG_DEBUG) {
+	public function read($offset = 0, $limit = 100, $severityThreshold = LOG_DEBUG, $fromTimestamp = NULL, $toTimestamp = NULL) {
 		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
+		$parameters = array();
+		if ($fromTimestamp !== NULL) {
+			$parameters['endkey'] = intval($fromTimestamp);
+		}
+		if ($toTimestamp !== NULL) {
+			$parameters['startkey'] = intval($toTimestamp);
+		}
 		try {
-			return $this->readView($viewName, $offset, $limit);
+			return $this->readView($viewName, $offset, $limit, $parameters);
 		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
 			$information = $notFoundException->getInformation();
-			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing') {
+			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing' || $information['reason'] === 'deleted') {
 				$this->initializeDatabase();
 				return $this->readView($viewName, $offset, $limit);
 			}
 			throw $notFoundException;
+		}
+	}
+
+	/**
+	 * Count log entries, filtered by constraints
+	 *
+	 * @param integer $severityThreshold
+	 * @param integer $fromTimestamp
+	 * @param integer $toTimestamp
+	 * @return integer Count
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function count($severityThreshold = LOG_DEBUG, $fromTimestamp = NULL, $toTimestamp = NULL) {
+		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
+		$parameters = array('reduce' => TRUE, 'descending' => TRUE);
+		if ($fromTimestamp !== NULL) {
+			$parameters['endkey'] = intval($fromTimestamp);
+		}
+		if ($toTimestamp !== NULL) {
+			$parameters['startkey'] = intval($toTimestamp);
+		}
+		try {
+			$result =  $this->client->queryView($this->designName, $viewName, $parameters);
+			if (isset($result->rows) && isset($result->rows[0])) {
+				return $result->rows[0]->value;
+			} else {
+				return 0;
+			}
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+			return 0;
 		}
 	}
 
@@ -171,11 +210,15 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	 * @param string $viewName
 	 * @param integer $offset
 	 * @param integer $limit
+	 * @param array $parameters
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function readView($viewName, $offset, $limit) {
-		$result = $this->client->queryView($this->designName, $viewName, array('include_docs' => TRUE, 'descending' => TRUE, 'skip' => $offset, 'limit' => $limit, 'decodeAssociativeArray' => TRUE));
+	protected function readView($viewName, $offset, $limit, array $parameters = array()) {
+		$options = array_merge(array(
+			'reduce' => FALSE, 'include_docs' => TRUE, 'descending' => TRUE, 'skip' => $offset, 'limit' => $limit, 'decodeAssociativeArray' => TRUE
+		), $parameters);
+		$result = $this->client->queryView($this->designName, $viewName, $options);
 		return array_map(function($row) { return $row['doc']; }, $result['rows']);
 	}
 
@@ -194,22 +237,36 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 			'_id' => '_design/' . $this->designName,
 			'views' => array(
 				'greaterEqualDebug' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_DEBUG . '){emit(doc.timestamp,null);}}'
+					'map' => 'function(doc){if(doc.severity<=' . LOG_DEBUG . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
 				),
 				'greaterEqualInfo' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_INFO. '){emit(doc.timestamp,null);}}'
+					'map' => 'function(doc){if(doc.severity<=' . LOG_INFO. '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
 				),
 				'greaterEqualNotice' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_NOTICE . '){emit(doc.timestamp,null);}}'
+					'map' => 'function(doc){if(doc.severity<=' . LOG_NOTICE . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
 				),
 				'greaterEqualWarning' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_WARNING . '){emit(doc.timestamp,null);}}'
+					'map' => 'function(doc){if(doc.severity<=' . LOG_WARNING . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
 				),
 				'greaterEqualError' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_ERR . '){emit(doc.timestamp,null);}}'
+					'map' => 'function(doc){if(doc.severity<=' . LOG_ERR . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
 				),
 				'greaterEqualCrit' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_CRIT . '){emit(doc.timestamp,null);}}'
+					'map' => 'function(doc){if(doc.severity<=' . LOG_CRIT . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
+				),
+				'greaterEqualEmerg' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_EMERG . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
+				),
+				'greaterEqualAlert' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_ALERT . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
 				)
 			)
 		));
