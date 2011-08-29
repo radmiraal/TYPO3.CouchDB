@@ -37,6 +37,18 @@ class TestEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
 	protected $testIndex;
 
 	/**
+	 * @param string $color
+	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
+	 */
+	public function findByRelatedValueObjectColor($color) {
+		$query = $this->createQuery();
+		$query->matching(
+			$query->equals('relatedValueObject.color', $color)
+		);
+		return $query->execute();
+	}
+
+	/**
 	 * @param string $name
 	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
 	 */

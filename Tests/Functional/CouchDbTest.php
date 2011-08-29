@@ -175,7 +175,31 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 
 		$count = $repository->countAll();
 		$this->assertEquals(2, $count);
+	}
 
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function queryPropertiesOfNestedValueObjectReturnsCorrectObjects() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Foo');
+		$entity->setRelatedValueObject(new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('purple'));
+		$repository->add($entity);
+
+		$otherEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$otherEntity->setName('Bar');
+		$repository->add($otherEntity);
+
+		$this->tearDown();
+
+		$entities = $repository->findByRelatedValueObjectColor('purple');
+		$this->assertEquals(1, count($entities));
+
+		$entities = $repository->findByRelatedValueObjectColor('green');
+		$this->assertEquals(0, count($entities));
 	}
 
 	/**

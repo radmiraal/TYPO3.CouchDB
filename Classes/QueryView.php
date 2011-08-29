@@ -266,7 +266,24 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	protected function buildEmitIndex($emit) {
 		if (is_object($emit)) {
 			if ($emit->type === 'property') {
-				return 'doc.properties["' . $emit->property . '"].value';
+				$emitStatement = '';
+				$propertyName = $emit->property;
+				$propertyPathParts = explode('.', $propertyName);
+				foreach ($propertyPathParts as $propertyPathPart) {
+					$pathParts[] = 'properties["' . $propertyPathPart . '"].value';
+					$checkParts[] = 'doc.' . implode('.', $pathParts);
+				}
+				$checkParts = array_slice($checkParts, 0, -1);
+
+				if (count($checkParts) > 0) {
+					$emitStatement .= '(' . implode('&&', $checkParts) . ')?';
+				}
+				$emitStatement .= 'doc.' . implode('.', $pathParts);
+				if (count($checkParts) > 0) {
+					$emitStatement .= ':null';
+				}
+
+				return $emitStatement;
 			} elseif ($emit->type === 'and') {
 				return '[' . $this->buildEmitIndex($emit->constraints[0]) . ',' . $this->buildEmitIndex($emit->constraints[1]) . ']';
 			}
