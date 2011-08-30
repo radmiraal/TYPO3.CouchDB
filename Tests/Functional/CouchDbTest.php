@@ -54,7 +54,11 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function tearDown() {
-		parent::tearDown();
+		try {
+			parent::tearDown();
+		} catch(\Exception $e) {
+			\TYPO3\FLOW3\var_dump($e, 'Exception during tearDown');
+		}
 
 		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
@@ -215,6 +219,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$relatedEntity->setName('Bar');
 		$entity->setRelatedEntity($relatedEntity);
 		$repository->add($entity);
+		$repository->add($relatedEntity);
 
 		$this->tearDown();
 
@@ -239,6 +244,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$relatedEntities->add($relatedEntity);
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
+		$repository->add($relatedEntity);
 
 		$this->tearDown();
 
@@ -265,10 +271,12 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$relatedEntity->setName('Nested entity 1');
 		$relatedEntity->setRelatedEntity($entity);
 		$relatedEntities->add($relatedEntity);
+		$repository->add($relatedEntity);
 		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 		$relatedEntity->setName('Nested entity 2');
 		$relatedEntity->setRelatedEntity($entity);
 		$relatedEntities->add($relatedEntity);
+		$repository->add($relatedEntity);
 		$entity->setRelatedEntities($relatedEntities);
 		$repository->add($entity);
 
@@ -337,6 +345,8 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection non root entities');
 		$fooEntity->getRelatedNonRootEntities()->clear();
 
+		$repository->update($fooEntity);
+
 		$this->tearDown();
 
 		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection non root entities');
@@ -368,6 +378,8 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection lazy non root entities');
 		$fooEntity->getRelatedLazyNonRootEntities()->clear();
 
+		$repository->update($fooEntity);
+
 		$this->tearDown();
 
 		$fooEntity = $repository->findOneByName('Entity with nested ArrayCollection lazy non root entities');
@@ -396,6 +408,8 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 
 		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
 		$fooEntity->setRelatedLazyNonRootEntity(NULL);
+
+		$repository->update($fooEntity);
 
 		$this->tearDown();
 
@@ -426,6 +440,8 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 
 		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
 		$fooEntity->setRelatedLazyNonRootEntity(NULL);
+
+		$repository->update($fooEntity);
 
 		$this->tearDown();
 
@@ -481,6 +497,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setRelatedValueObjectWithReference($relatedValueObject);
 
 		$repository->add($entity);
+		$repository->add($nestedEntity);
 
 		$this->tearDown();
 
@@ -534,23 +551,56 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function updateMappedEntity() {
+	public function updateMappedEntityUpdatesProperties() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Foobar');
 		$repository->add($entity);
 
-		$identity = $this->persistenceManager->getIdentifierByObject($entity);
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
 
 		$this->tearDown();
 
-		$source = array('__identity' => $identity, 'name' => 'Foofoo');
+		$source = array('__identity' => $identifier, 'name' => 'Foofoo');
 		$propertyMapper = $this->objectManager->get('TYPO3\FLOW3\Property\PropertyMapper');
 		$mappedEntity = $propertyMapper->convert($source, 'TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
 
 		$repository->update($mappedEntity);
 
 		$this->assertEquals('Foofoo', $mappedEntity->getName());
+
+		$this->tearDown();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+
+		$this->assertEquals('Foofoo', $entity->getName());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function updateMappedEntityWithoutUpdateDoesNotPersist() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName('Foobar');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDown();
+
+		$source = array('__identity' => $identifier, 'name' => 'Foofoo');
+		$propertyMapper = $this->objectManager->get('TYPO3\FLOW3\Property\PropertyMapper');
+		$mappedEntity = $propertyMapper->convert($source, 'TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+
+		$this->assertEquals('Foofoo', $mappedEntity->getName());
+
+		$this->tearDown();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+
+		$this->assertNotEquals('Foofoo', $entity->getName());
 	}
 
 	/**

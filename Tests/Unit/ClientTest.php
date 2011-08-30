@@ -43,6 +43,9 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * Setup a CouchDB HTTP connector
+	 *
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function setUp() {
 		$connector = new \TYPO3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
@@ -61,6 +64,9 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * Remove the test database
+	 *
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function tearDown() {
 		if ($this->client->databaseExists($this->databaseName)) {
@@ -70,6 +76,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function listDatabasesWorks() {
 		$response = $this->client->listDatabases();
@@ -78,6 +85,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function databasesInformationWorks() {
 		$response = $this->client->databaseInformation($this->databaseName);
@@ -86,6 +94,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function createDocumentWithIdWorks() {
 		$response = $this->client->createDocument(array(
@@ -96,6 +105,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function createDocumentWithoutIdWorks() {
 		$response = $this->client->createDocument(array(
@@ -107,6 +117,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function createDocumentWithIdInDocumentWorks() {
 		$response = $this->client->createDocument(array(
@@ -121,6 +132,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function updateDocumentWorks() {
 		$response = $this->client->createDocument(array(
@@ -138,6 +150,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function deleteDocumentWorks() {
 		$response = $this->client->createDocument(array(
@@ -156,6 +169,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function listDocumentsWithParameters() {
 		$this->client->createDocument(array(
@@ -168,6 +182,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDocumentsWithParameters() {
 		$this->client->createDocument(array(
@@ -186,6 +201,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDocumentWorks() {
 		$this->client->createDocument(array(
@@ -198,6 +214,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function createAndGetDesignDocumentWorks() {
 		$this->client->createDocument(array('language' => 'javascript'), '_design/test');
@@ -209,6 +226,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function queryViewWithParametersWorks() {
 		$this->client->createDocument(array(
@@ -236,6 +254,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function queryViewWithMultipleKeysWorks() {
 		$this->client->createDocument(array(
@@ -268,6 +287,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDocumentInformationWorks() {
 		$response = $this->client->createDocument(array(
@@ -276,6 +296,21 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$id = $response->getId();
 		$information = $this->client->getDocumentInformation($id);
 		$this->assertEquals($response->getRevision(), $information->getRevision());
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function initializeObjectSetsDatabaseNameFromDataSourceName() {
+		$mockConnector = $this->getMock('TYPO3\CouchDB\Client\HttpConnector', array(), array(), '', FALSE);
+		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
+		$mockObjectManager->expects($this->once())->method('create')->will($this->returnValue($mockConnector));
+		$client = $this->getAccessibleMock('TYPO3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984/' . $this->databaseName));
+		$client->_set('objectManager', $mockObjectManager);
+
+		$client->initializeObject();
+		$this->assertEquals($this->databaseName, $client->getDatabaseName());
 	}
 
 }

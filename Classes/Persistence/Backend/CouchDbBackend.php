@@ -44,6 +44,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * The URL of the CouchDB server. Valid URLs could be:
 	 * - http://127.0.0.1:5984
 	 * - http://user:pass@127.0.0.1:5984
+	 * - http://127.0.0.1:5984/my_database
 	 *
 	 * @var string
 	 */
@@ -54,7 +55,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 *
 	 * @var string
 	 */
-	protected $databaseName;
+	protected $databaseName = NULL;
 
 	/**
 	 * @var TYPO3\CouchDB\EntityByParentIdentifierView
@@ -110,7 +111,9 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 */
 	protected function connect() {
 		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
-		$this->client->setDatabaseName($this->databaseName);
+		if ($this->databaseName !== NULL) {
+			$this->client->setDatabaseName($this->databaseName);
+		}
 	}
 
 	/**
@@ -372,9 +375,15 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 				'properties' => $this->collectProperties($valueIdentifier, $object, $classSchema->getProperties(), $noDirtyOnValueObject)
 			);
 		} else {
-			return array(
-				'identifier' => $this->persistObject($object, $parentIdentifier)
-			);
+			if ($classSchema->isAggregateRoot() && !$this->persistenceManager->isNewObject($object)) {
+				return array(
+					'identifier' => $this->persistenceSession->getIdentifierByObject($object)
+				);
+			} else {
+				return array(
+					'identifier' => $this->persistObject($object, $parentIdentifier)
+				);
+			}
 		}
 	}
 

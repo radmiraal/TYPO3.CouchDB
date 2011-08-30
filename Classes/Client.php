@@ -37,7 +37,6 @@ class Client {
 	protected $objectManager;
 
 	/**
-	 *
 	 * @var \TYPO3\CouchDB\Client\HttpConnector
 	 */
 	protected $connector;
@@ -49,6 +48,9 @@ class Client {
 
 	/**
 	 * Create a new CouchDB client
+	 *
+	 * Pass a path after the host and port to set a database automatically
+	 * (e.g. http://127.0.0.1:5984/mydb).
 	 *
 	 * @param string $dataSourceName The CouchDB connection parameters as URL, e.g. http://user:pass@127.0.0.1:5984
 	 * @param array $options Additional connection options for the HttpConnector
@@ -63,6 +65,7 @@ class Client {
 	/**
 	 * @return void
 	 * @author Karsten Dambekalns <karsten@typo3.org>
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function initializeObject() {
 		if (($urlParts = parse_url($this->dataSourceName)) === FALSE) {
@@ -72,6 +75,9 @@ class Client {
 		$port = isset($urlParts['port']) ? $urlParts['port'] : NULL;
 		$username = isset($urlParts['user']) ? $urlParts['user'] : NULL;
 		$password = isset($urlParts['pass']) ? $urlParts['pass'] : NULL;
+		if (isset($urlParts['path'])) {
+			$this->setDatabaseName(ltrim($urlParts['path'], '/'));
+		}
 		$this->connector = $this->objectManager->create('TYPO3\CouchDB\Client\HttpConnector', $host, $port, $username, $password, $this->options);
 	}
 
@@ -88,11 +94,14 @@ class Client {
 	/**
 	 * Create a database
 	 *
-	 * @param string $databaseName The database name
+	 * @param string $databaseName The database name or NULL to create the database set in databaseName
 	 * @return boolean
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function createDatabase($databaseName) {
+	public function createDatabase($databaseName = NULL) {
+		if ($databaseName === NULL) {
+			$databaseName = $this->getDatabaseName();
+		}
 		$response = $this->connector->put('/' . urlencode($databaseName));
 		return $response instanceof \TYPO3\CouchDB\Client\StatusResponse && $response->isSuccess();
 	}
@@ -104,7 +113,10 @@ class Client {
 	 * @return boolean
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function deleteDatabase($databaseName) {
+	public function deleteDatabase($databaseName = NULL) {
+		if ($databaseName === NULL) {
+			$databaseName = $this->getDatabaseName();
+		}
 		$response = $this->connector->delete('/' . urlencode($databaseName));
 		return $response instanceof \TYPO3\CouchDB\Client\StatusResponse && $response->isSuccess();
 	}
@@ -328,9 +340,9 @@ class Client {
 	 * @return string
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function getDatabaseName() {
+	public function getDatabaseName() {
 		if ($this->databaseName === NULL) {
-			throw new \TYPO3\FLOW3\Persistence\Exception('No database name set', 1287349160);
+			throw new \TYPO3\FLOW3\Persistence\Exception('No database name set, call setDatabaseName() or provide database in dataSourceName', 1287349160);
 		}
 		return $this->databaseName;
 	}
