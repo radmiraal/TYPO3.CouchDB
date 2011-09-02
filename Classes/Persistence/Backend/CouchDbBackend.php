@@ -259,6 +259,10 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	protected function collectProperties($identifier, $object, array $properties, &$dirty) {
 		$propertyData = array();
 		foreach ($properties as $propertyName => $propertyMetaData) {
+			if ($propertyName === 'FLOW3_Persistence_Identifier') {
+				continue;
+			}
+
 			$this->checkPropertyValue($object, $propertyName, $propertyMetaData);
 			$propertyValue = \TYPO3\FLOW3\Reflection\ObjectAccess::getProperty($object, $propertyName, TRUE);
 
@@ -442,6 +446,38 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			} else {
 				$client->createDocument($design);
 			}
+		});
+	}
+
+	/**
+	 * Explicitly remove a view to invalidate it
+	 *
+	 * Should be called after changes to the class hierarchy to
+	 * rebuild the view for a query.
+	 *
+	 * @param string $designName
+	 * @param string $viewName
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeView($designName, $viewName) {
+		try {
+			$design = $this->doOperation(function($client) use ($designName) {
+				return $client->getDocument('_design/' . $designName);
+			});
+		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+			// Design does not exist, nothing to remove
+			return;
+		}
+
+		if (!isset($design->views->{$viewName})) {
+			return;
+		}
+
+		unset($design->views->{$viewName});
+
+		$this->doOperation(function($client) use ($design) {
+			$client->updateDocument($design, $design->_id);
 		});
 	}
 

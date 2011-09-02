@@ -64,7 +64,7 @@ class EntityByParentIdentifierView implements \TYPO3\CouchDB\ViewInterface {
 			);
 			return $parameters;
 		} else {
-			throw new Exception('EntityByParentIdentifier view needs parentIdentifier argument', 1286893991);
+			throw new \Exception('EntityByParentIdentifier view needs parentIdentifier argument', 1286893991);
 		}
 	}
 

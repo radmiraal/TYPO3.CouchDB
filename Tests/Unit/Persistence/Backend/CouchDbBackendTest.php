@@ -333,6 +333,36 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
+	public function collectPropertiesSkipsInternalIdentifierProperty() {
+		$object = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
+		$object->foo = 'baz';
+		$object->FLOW3_Persistence_Identifier = '9febd71d-da12-4c80-ae6e-a4edc24f9a57';
+
+		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
+
+		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('checkPropertyValue'));
+		$backend->injectPersistenceSession($mockPersistenceSession);
+
+		$identifier = 'abcdefg';
+		$properties = array(
+			'foo' => array(
+				'type' => 'string',
+				'metadata' => 'bar',
+			),
+			'FLOW3_Persistence_Identifier' => array(
+				'multivalue' => false,
+				'type' => 'string'
+			)
+		);
+		$dirty = FALSE;
+		$properties = $backend->_callRef('collectProperties', $identifier, $object, $properties, $dirty);
+		$this->assertFalse(isset($properties['FLOW3_Persistence_Identifier']), 'Internal identifier property should be skipped');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
 	public function removeEntitiesByParentQueriesEntitiesByParentIdentifier() {
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView'));
 
