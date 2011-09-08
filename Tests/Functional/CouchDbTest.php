@@ -627,6 +627,29 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	}
 
 	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function idAnnotationIsUsedByPersistenceManager() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\CustomIdEntityRepository');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\CustomIdEntity('MySpecialId');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->assertEquals('MySpecialId', $identifier, 'getIdentifierByObject should return custom id');
+
+		$this->tearDown();
+
+		$persistedEntity = $this->persistenceManager->getObjectByIdentifier($identifier);
+
+		$persistedIdentifier = $this->persistenceManager->getIdentifierByObject($persistedEntity);
+
+		$this->assertEquals('MySpecialId', $persistedEntity->getCustomId(), 'Custom id property should return value');
+		$this->assertEquals('MySpecialId', $persistedIdentifier, 'Identifier of entity should have value of annotated property');
+	}
+
+	/**
 	 * Delete the database
 	 *
 	 * @return void

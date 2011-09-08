@@ -2,3 +2,7 @@ TYPO3\FLOW3\Persistence\Generic\Backend\BackendInterface:
   className: 'TYPO3\CouchDB\Persistence\Backend\CouchDbBackend'
 TYPO3\FLOW3\Persistence\PersistenceManagerInterface:
   className: 'TYPO3\FLOW3\Persistence\Generic\PersistenceManager'
+TYPO3\FLOW3\Persistence\Generic\PersistenceManager:
+  properties:
+    backend:
+      object: TYPO3\CouchDB\Persistence\Backend\CouchDbBackend
