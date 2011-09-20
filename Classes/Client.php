@@ -138,7 +138,10 @@ class Client {
 	 * @return boolean TRUE if the database exists
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function databaseExists($databaseName) {
+	public function databaseExists($databaseName = NULL) {
+		if ($databaseName === NULL) {
+			$databaseName = $this->getDatabaseName();
+		}
 		try {
 			$information = $this->databaseInformation($databaseName);
 			return is_object($information) && $information->db_name === $databaseName;

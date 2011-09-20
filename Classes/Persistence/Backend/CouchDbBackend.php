@@ -57,9 +57,14 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	protected $databaseName = NULL;
 
 	/**
-	 * @var TYPO3\CouchDB\EntityByParentIdentifierView
+	 * @var \TYPO3\CouchDB\EntityByParentIdentifierView
 	 */
 	protected $entityByParentIdentifierView;
+
+	/**
+	 * @var \TYPO3\CouchDB\Persistence\Backend\Flow3Design
+	 */
+	protected $flow3Design;
 
 	/**
 	 * @var boolean
@@ -113,6 +118,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		if ($this->databaseName !== NULL) {
 			$this->client->setDatabaseName($this->databaseName);
 		}
+		$this->flow3Design = new Flow3Design($this->client);
 	}
 
 	/**
@@ -316,6 +322,11 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 
 		$this->removeEntitiesByParent($identifier);
 
+		$references = $this->flow3Design->entityReferences($identifier);
+		if (count($references) > 0) {
+			throw new \TYPO3\FLOW3\Persistence\Exception('Wont remove entity "' . $identifier . '", still referenced', 1316526986);
+		}
+
 		$this->doOperation(function($client) use ($identifier, $revision) {
 			return $client->deleteDocument($identifier, $revision);
 		});
@@ -346,8 +357,8 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 
 	/**
 	 *
-	 * @param type $object
-	 * @param type $objectState
+	 * @param object $object
+	 * @param integer $objectState
 	 * @return void
 	 */
 	protected function emitPersistedObject($object, $objectState) {

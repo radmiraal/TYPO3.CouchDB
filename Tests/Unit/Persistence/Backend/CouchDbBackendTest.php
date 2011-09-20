@@ -447,18 +447,18 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	public function reallyRemoveEntityDeletesDocumentWithRevisionFromObject() {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockFlow3Design = $this->getMock('TYPO3\CouchDB\Persistence\Backend\Flow3Design', array(), array(), '', FALSE);
 
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('xyz'));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
+		$backend->_set('client', $mockClient);
+		$backend->_set('flow3Design', $mockFlow3Design);
 
 		$backend->expects($this->once())->method('getRevisionByObject')->with($mockObject)->will($this->returnValue('5-revisionid'));
-
 		$mockClient->expects($this->once())->method('deleteDocument')->with('xyz', '5-revisionid');
-
-		$backend->_set('client', $mockClient);
 
 		$backend->_call('reallyRemoveEntity', $mockObject);
 	}
@@ -469,12 +469,14 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function reallyRemoveEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
+		$mockFlow3Design = $this->getMock('TYPO3\CouchDB\Persistence\Backend\Flow3Design', array(), array(), '', FALSE);
 
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('xyz'));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation', 'removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
+		$backend->_set('flow3Design', $mockFlow3Design);
 
 		$backend->expects($this->any())->method('getRevisionByObject')->will($this->returnValue('7-abc'));
 		$backend->expects($this->once())->method('removeEntitiesByParent')->with('xyz');

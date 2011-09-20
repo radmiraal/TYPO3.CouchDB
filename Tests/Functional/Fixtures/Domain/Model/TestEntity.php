@@ -124,7 +124,7 @@ class TestEntity {
 	 *
 	 * @param \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
 	 */
-	public function setRelatedEntities($relatedEntities) {
+	public function setRelatedEntities(\Doctrine\Common\Collections\ArrayCollection $relatedEntities) {
 		$this->relatedEntities = $relatedEntities;
 	}
 

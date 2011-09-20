@@ -199,17 +199,37 @@ class DesignDocument {
 		return 'function(doc){if(!doc._deleted&&doc.classname==="' . addslashes($className) . '"){' . self::evalBody($body) . '}}';
 	}
 
+	/**
+	 *
+	 * @param string $propertyPath
+	 * @param string $asVariableName
+	 * @param string $body
+	 * @return string
+	 */
 	static protected function eachProperty($propertyPath, $asVariableName, $body) {
 		return self::propertyGuard($propertyPath, self::propertyValue($propertyPath, '[]') . '.forEach(function(' . $asVariableName . 'Item){' . $asVariableName . '=' . $asVariableName . 'Item.value;' . self::evalBody($body) . '});');
 	}
 
+	/**
+	 * Returns an emit call which evals the key and body
+	 *
+	 * @param string $keyBody
+	 * @param string $valueBody
+	 * @return string
+	 */
 	static protected function emit($keyBody, $valueBody) {
 		return 'emit(' . self::evalBody($keyBody) . ',' . self::evalBody($valueBody) . ')';
 	}
 
 	/**
+	 * Eval a value to a JavaScript string
+	 *
+	 * Accepts arrays, objects or strings. Arrays will be compiled
+	 * to multiple statements, objects to JSON notation. Strings
+	 * are emitted as is.
 	 *
 	 * @param mixed $body
+	 * @return string
 	 */
 	static protected function evalBody($body) {
 		$statements = '';

@@ -59,6 +59,15 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 			\TYPO3\FLOW3\var_dump($e, 'Exception during tearDown');
 		}
 
+		$this->tearDownPersistence();
+	}
+
+	/**
+	 * @return void
+	 */
+	public function tearDownPersistence() {
+		$this->persistenceManager->persistAll();
+
 		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
 		$persistenceSession->destroy();
 	}
@@ -109,12 +118,9 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$entity->setName('Foobar');
 		$repository->add($entity);
 
-		$persistenceManager = $this->objectManager->get('TYPO3\FLOW3\Persistence\PersistenceManagerInterface');
-		$persistenceManager->persistAll();
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
 
-		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
-		$identifier = $persistenceSession->getIdentifierByObject($entity);
-		$persistenceSession->destroy();
+		$this->tearDownPersistence();
 
 		$backend = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Backend\BackendInterface');
 		$objectData = $backend->getObjectDataByIdentifier($identifier);
@@ -447,7 +453,9 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 		$fooEntity = $repository->findOneByName('Entity with nested lazy non root entity');
 		$this->assertTrue($fooEntity->getRelatedLazyNonRootEntity() === NULL, 'Related entity is unset');
 
-		$this->assertFalse($this->persistenceManager->getObjectByIdentifier($identifier) === NULL, 'Assert lazy nested entity was NOT deleted');
+		$referencedEntity = $this->persistenceManager->getObjectByIdentifier($identifier);
+		// Test for name to trigger load of lazy entity
+		$this->assertEquals('Non root entity', $referencedEntity->getName(), 'Assert lazy nested entity was NOT deleted');
 	}
 
 	/**
