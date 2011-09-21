@@ -49,9 +49,13 @@ class DesignCommandController extends \TYPO3\FLOW3\MVC\Controller\CommandControl
 	public function synchronizeCommand() {
 		$designDocumentClassNames = $this->reflectionService->getAllSubClassNamesForClass('TYPO3\CouchDB\DesignDocument');
 		foreach ($designDocumentClassNames as $objectName) {
-			$designDocument = $this->objectManager->get($objectName);
-			$designDocument->synchronize();
-			$this->outputLine($objectName . ' synchronized.');
+			if ($this->objectManager->getScope($objectName) === \TYPO3\FLOW3\Object\Configuration\Configuration::SCOPE_SINGLETON) {
+				$designDocument = $this->objectManager->get($objectName);
+				$designDocument->synchronize();
+				$this->outputLine($objectName . ' synchronized.');
+			} else {
+				$this->outputLine($objectName . ' skipped.');
+			}
 		}
 	}
 
