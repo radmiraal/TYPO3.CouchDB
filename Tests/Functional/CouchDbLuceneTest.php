@@ -160,6 +160,31 @@ class CouchDbLuceneTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	}
 
 	/**
+	 * Larger documents are transferred differently from CouchDB Lucene, so the
+	 * HttpConnector had a bug with wrong handling of chunked transfer.
+	 *
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function chunkedDataIsTransferredCorrectly() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
+		$entity->setName(str_repeat('Some entity-', 2000));
+		$entity->setRelatedValueObject(new Fixtures\Domain\Model\TestValueObject('green'));
+		$repository->add($entity);
+
+		$persistenceManager = $this->objectManager->get('TYPO3\FLOW3\Persistence\PersistenceManagerInterface');
+		$persistenceManager->persistAll();
+
+		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
+		$persistenceSession->destroy();
+
+		$entities = $repository->findByColor('green')->toArray();
+		$this->assertEquals(1, count($entities));
+	}
+
+	/**
 	 * Delete the database
 	 *
 	 * @return void

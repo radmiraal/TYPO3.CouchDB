@@ -308,16 +308,17 @@ class HttpConnector {
 
 							// Read body only as specified by chunk sizes, everything else
 							// are just footnotes, which are not relevant for us.
-						$bytesLeft = $bytesToRead;
+							//
+							// Read 2 more bytes, since chunks end with CRLF
+						$bytesLeft = $bytesToRead + 2;
+						$chunk = '';
 						while ($bytesLeft > 0) {
-							$body .= $read = fread( $this->connection, $bytesLeft + 2 );
-							$bytesLeft -= strlen( $read );
+							$chunk .= fread($this->connection, $bytesLeft);
+							$bytesLeft -= strlen($chunk);
 						}
+						$body .= substr($chunk, 0, -2);
 					}
 				} while ($bytesToRead > 0);
-
-					// Chop off \r\n from the end.
-				$body = substr($body, 0, -2);
 			}
 		}
 
@@ -347,7 +348,11 @@ class HttpConnector {
 					// _rev, which are always available for documents and are only
 					// available for documents.
 				if (!$returnRawResponse) {
-					return json_decode($body, $decodeAssociativeArray);
+					$result = json_decode($body, $decodeAssociativeArray);
+					if ($result === NULL && json_last_error() !== JSON_ERROR_NONE) {
+						throw new \TYPO3\CouchDB\Client\InvalidResultException('Invalid document', 1317037277);
+					}
+					return $result;
 				} else {
 					return new \TYPO3\CouchDB\Client\RawResponse($headers, $body);
 				}
