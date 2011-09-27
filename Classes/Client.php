@@ -242,6 +242,18 @@ class Client {
 	}
 
 	/**
+	 * Update (delete) multiple documents
+	 *
+	 * @param array $documents The documents as array
+	 * @return object
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function updateDocuments(array $documents, array $queryOptions = NULL) {
+		$requestOptions = $this->extractRequestOptions($queryOptions);
+		return $this->connector->post('/' . urlencode($this->getDatabaseName()) . '/_bulk_docs', $queryOptions, json_encode(array('docs' => $documents)), $requestOptions);
+	}
+
+	/**
 	 * Delete a document
 	 *
 	 * @param string $id The document id
