@@ -250,6 +250,9 @@ class Client {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function deleteDocument($id, $revision) {
+		if (!preg_match('/^[0-9a-zA-Z-]/', $id)) {
+			throw new \TYPO3\FLOW3\Persistence\Exception('Invalid document id: ' . $id, 1317125883);
+		}
 		$response = $this->connector->delete('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), array('rev' => $revision));
 		return is_object($response) && $response->ok === TRUE;
 	}
