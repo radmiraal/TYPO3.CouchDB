@@ -115,6 +115,8 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 
 		$document = array(
 			'timestamp' => microtime(TRUE),
+			'date' => strftime('%Y-%m-%dT%H:%M:%S'),
+			'host' => gethostname(),
 			'processId' => function_exists('posix_getpid') ? posix_getpid() : '',
 			'ipAddress' => ($this->logIpAddress === TRUE) ? (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '') : '',
 			'message' => $message,
@@ -259,12 +261,12 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 					'map' => 'function(doc){if(doc.severity<=' . LOG_CRIT . '){emit(doc.timestamp,null);}}',
 					'reduce' => '_count'
 				),
-				'greaterEqualEmerg' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_EMERG . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
 				'greaterEqualAlert' => array(
 					'map' => 'function(doc){if(doc.severity<=' . LOG_ALERT . '){emit(doc.timestamp,null);}}',
+					'reduce' => '_count'
+				),
+				'greaterEqualEmerg' => array(
+					'map' => 'function(doc){if(doc.severity<=' . LOG_EMERG . '){emit(doc.timestamp,null);}}',
 					'reduce' => '_count'
 				)
 			)
