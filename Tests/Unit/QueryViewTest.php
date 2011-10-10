@@ -31,14 +31,15 @@ class QueryViewTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function designNameIsFLOW3() {
+	public function queryIdentifierIsTakenAsDesignName() {
 		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
 		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
 
 		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
-		$this->assertEquals('FLOW3', $queryView->getDesignName());
+		$this->assertEquals('query_TYPO3_CouchDB_CouchDB_Tests_Unit_TestEntity', $queryView->getDesignName());
+		$this->assertEquals('entities', $queryView->getViewName());
 	}
 
 	/**
@@ -76,7 +77,7 @@ class QueryViewTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function emptyQueryReturnsViewNameWithoutConstraints() {
+	public function viewNameDefaultsToEntities() {
 		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
 		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
 		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
@@ -84,7 +85,30 @@ class QueryViewTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
 
 		$viewName = $queryView->getViewName();
-		$this->assertEquals('query_TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity', $viewName);
+		$this->assertEquals('entities', $viewName);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function viewNameAndDesignNameCanBeSpecifiedByQueryIdentifier() {
+		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Query', array(), array(), '', FALSE);
+		$mockQuery->expects($this->any())->method('getType')->will($this->returnValue('TYPO3\CouchDB\\CouchDB\\Tests\\Unit\\TestEntity'));
+		$mockQuery->expects($this->any())->method('getConstraint')->will($this->returnValue(NULL));
+
+		$queryView = new \TYPO3\CouchDB\QueryView($mockQuery);
+		$queryView->injectSettings(array(
+			'queries' => array(
+				'TYPO3_CouchDB_CouchDB_Tests_Unit_TestEntity' => array(
+					'designName' => 'foo',
+					'viewName' => 'bar'
+				)
+			)
+		));
+
+		$this->assertEquals('foo', $queryView->getDesignName());
+		$this->assertEquals('bar', $queryView->getViewName());
 	}
 
 	/**

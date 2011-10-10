@@ -44,12 +44,45 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	/**
 	 * @var string
 	 */
-	protected $name;
+	protected $viewName;
 
 	/**
 	 * @var string
 	 */
 	protected $type;
+
+	/**
+	 * @var string
+	 */
+	protected $designName;
+
+	/**
+	 * @var string
+	 */
+	protected $queryIdentifier;
+
+	/**
+	 * @var array
+	 */
+	protected $settings;
+
+	/**
+	 * Inject package settings
+	 *
+	 * @param array $settings
+	 * @return void
+	 */
+	public function injectSettings(array $settings) {
+		$this->settings = $settings;
+		if (isset($this->settings['queries'][$this->queryIdentifier])) {
+			if (isset($this->settings['queries'][$this->queryIdentifier]['viewName'])) {
+				$this->viewName = $this->settings['queries'][$this->queryIdentifier]['viewName'];
+			}
+			if (isset($this->settings['queries'][$this->queryIdentifier]['designName'])) {
+				$this->designName = $this->settings['queries'][$this->queryIdentifier]['designName'];
+			}
+		}
+	}
 
 	/**
 	 *
@@ -64,7 +97,9 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 		} else {
 			$constraintName = '';
 		}
-		$this->name = $this->type . $constraintName;
+		$this->queryIdentifier = strtr($this->type, '\\', '_') . $constraintName;
+		$this->viewName = 'entities';
+		$this->designName = 'query_' . $this->queryIdentifier;
 	}
 
 	/**
@@ -168,7 +203,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	 * @return string
 	 */
 	public function getDesignName() {
-		return 'FLOW3';
+		return $this->designName;
 	}
 
 	/**
@@ -178,7 +213,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	 * @return string
 	 */
 	public function getViewName() {
-		return 'query_' . $this->name;
+		return $this->viewName;
 	}
 
 	/**
@@ -217,7 +252,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 
 			return $parameters;
 		} else {
-			throw new Exception('query argument for QueryView must implement QueryInterface', 1286369598);
+			throw new \InvalidArgumentException('The "query" argument for QueryView must implement QueryInterface', 1286369598);
 		}
 	}
 
