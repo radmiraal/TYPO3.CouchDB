@@ -313,8 +313,9 @@ class HttpConnector {
 						$bytesLeft = $bytesToRead + 2;
 						$chunk = '';
 						while ($bytesLeft > 0) {
-							$chunk .= fread($this->connection, $bytesLeft);
-							$bytesLeft -= strlen($chunk);
+							$currentChunk = fread($this->connection, $bytesLeft);
+							$bytesLeft -= strlen($currentChunk);
+							$chunk .= $currentChunk;
 						}
 						$body .= substr($chunk, 0, -2);
 					}
