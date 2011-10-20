@@ -21,10 +21,11 @@ namespace TYPO3\CouchDB\Persistence\Backend;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use Doctrine\ORM\Mapping as ORM;
+use TYPO3\FLOW3\Annotations as FLOW3;
+
 /**
  * A CouchDB design document to specify views
- *
- * @scope prototype
  */
 class Flow3Design extends \TYPO3\CouchDB\DesignDocument {
 

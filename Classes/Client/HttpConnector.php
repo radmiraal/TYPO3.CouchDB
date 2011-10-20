@@ -21,13 +21,15 @@ namespace TYPO3\CouchDB\Client;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use Doctrine\ORM\Mapping as ORM;
+use TYPO3\FLOW3\Annotations as FLOW3;
+
 /**
  * A HTTP connector for the CouchDB client
  *
  * Some code borrowed from phpillow project.
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @scope prototype
  */
 class HttpConnector {
 

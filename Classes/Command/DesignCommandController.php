@@ -21,6 +21,9 @@ namespace TYPO3\CouchDB\Command;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use Doctrine\ORM\Mapping as ORM;
+use TYPO3\FLOW3\Annotations as FLOW3;
+
 /**
  * A command controller to synchronize design documents
  *
@@ -29,13 +32,13 @@ namespace TYPO3\CouchDB\Command;
 class DesignCommandController extends \TYPO3\FLOW3\MVC\Controller\CommandController {
 
 	/**
-	 * @inject
+	 * @FLOW3\Inject
 	 * @var \TYPO3\FLOW3\Reflection\ReflectionService
 	 */
 	protected $reflectionService;
 
 	/**
-	 * @inject
+	 * @FLOW3\Inject
 	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;

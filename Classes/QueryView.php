@@ -21,17 +21,19 @@ namespace TYPO3\CouchDB;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use Doctrine\ORM\Mapping as ORM;
+use TYPO3\FLOW3\Annotations as FLOW3;
+
 /**
  * A CouchDB view for queries
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @scope prototype
  */
 class QueryView implements \TYPO3\CouchDB\ViewInterface {
 
 	/**
 	 * @var \TYPO3\FLOW3\Reflection\ReflectionService
-	 * @inject
+	 * @FLOW3\Inject
 	 */
 	protected $reflectionService;
 

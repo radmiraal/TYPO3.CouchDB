@@ -21,12 +21,15 @@ namespace TYPO3\CouchDB\Domain\Index;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use Doctrine\ORM\Mapping as ORM;
+use TYPO3\FLOW3\Annotations as FLOW3;
+
 /**
  * A CouchDB Lucene index for advanced queries
  * @see https://github.com/rnewson/couchdb-lucene
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @scope singleton
+ * @FLOW3\Scope("singleton")
  */
 abstract class LuceneIndex {
 
@@ -51,7 +54,7 @@ abstract class LuceneIndex {
 	protected $configured = FALSE;
 
 	/**
-	 * @inject
+	 * @FLOW3\Inject
 	 * @var \TYPO3\CouchDB\Persistence\LuceneQueryFactory
 	 */
 	protected $luceneQueryFactory;
