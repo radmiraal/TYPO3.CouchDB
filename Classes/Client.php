@@ -32,6 +32,11 @@ use TYPO3\FLOW3\Annotations as FLOW3;
 class Client {
 
 	/**
+	 * Regexp pattern for valid document ids
+	 */
+	const PATTERN_DOCUMENT_ID = '/^[0-9a-zA-Z-_]/';
+
+	/**
 	 * @FLOW3\Inject
 	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
 	 */
@@ -173,6 +178,7 @@ class Client {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDocument($id, array $queryOptions = NULL) {
+		$this->checkDocumentId($id);
 		$requestOptions = $this->extractRequestOptions($queryOptions);
 		return $this->connector->get('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), $queryOptions, NULL, $requestOptions);
 	}
@@ -185,6 +191,7 @@ class Client {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDocumentInformation($id) {
+		$this->checkDocumentId($id);
 		return $this->connector->head('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), NULL, NULL, array('raw' => TRUE));
 	}
 
@@ -223,6 +230,7 @@ class Client {
 		if ($id === NULL) {
 			return $this->connector->post('/' . urlencode($this->getDatabaseName()), NULL, $document);
 		} else {
+			$this->checkDocumentId($id);
 			return $this->connector->put('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), NULL, $document);
 		}
 	}
@@ -237,6 +245,7 @@ class Client {
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
 	public function updateDocument($document, $id) {
+		$this->checkDocumentId($id);
 		if (!is_string($document)) {
 			$document = json_encode($document);
 		}
@@ -264,9 +273,7 @@ class Client {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function deleteDocument($id, $revision) {
-		if (!preg_match('/^[0-9a-zA-Z-]/', $id)) {
-			throw new \TYPO3\FLOW3\Persistence\Exception('Invalid document id: ' . $id, 1317125883);
-		}
+		$this->checkDocumentId($id);
 		$response = $this->connector->delete('/' . urlencode($this->getDatabaseName()) . '/' . $this->encodeId($id), array('rev' => $revision));
 		return is_object($response) && $response->ok === TRUE;
 	}
@@ -345,6 +352,20 @@ class Client {
 			unset($queryOptions['decodeAssociativeArray']);
 		}
 		return $requestOptions;
+	}
+
+	/**
+	 * Test the given id for a valid document id. Throws
+	 * an exception if the id did not match the pattern
+	 * defined in PATTERN_DOCUMENT_ID.
+	 *
+	 * @param string $id The document id
+	 * @return void
+	 */
+	protected function checkDocumentId($id) {
+		if (!preg_match(self::PATTERN_DOCUMENT_ID, $id)) {
+			throw new \TYPO3\FLOW3\Persistence\Exception('Invalid document id: ' . $id, 1317125883);
+		}
 	}
 
 	/**

@@ -213,6 +213,15 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 * @expectedException \TYPO3\FLOW3\Persistence\Exception
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getDocumentWithInvalidIdThrowsException() {
+		$this->client->getDocument(NULL);
+	}
+
+	/**
+	 * @test
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function createAndGetDesignDocumentWorks() {
