@@ -88,9 +88,10 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 			LOG_INFO    => 'info',
 			LOG_DEBUG   => 'debug',
 		);
-
 		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
-		$this->client->setDatabaseName($this->databaseName);
+		if ($this->databaseName !== NULL) {
+			$this->client->setDatabaseName($this->databaseName);
+		}
 	}
 
 	/**
