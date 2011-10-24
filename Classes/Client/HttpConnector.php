@@ -353,7 +353,7 @@ class HttpConnector {
 				if (!$returnRawResponse) {
 					$result = json_decode($body, $decodeAssociativeArray);
 					if ($result === NULL && json_last_error() !== JSON_ERROR_NONE) {
-						throw new \TYPO3\CouchDB\Client\InvalidResultException('Invalid document', 1317037277);
+						throw new \TYPO3\CouchDB\Client\InvalidResultException('Invalid document (JSON error code ' . json_last_error() . ')', 1317037277, $body);
 					}
 					return $result;
 				} else {

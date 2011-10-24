@@ -28,5 +28,16 @@ namespace TYPO3\CouchDB\Client;
  */
 class InvalidResultException extends \TYPO3\FLOW3\Persistence\Exception {
 
+	/**
+	 *
+	 * @param string $message
+	 * @param integer $code
+	 * @param string $body The body of the result
+	 */
+	public function __construct($message, $code, $body = NULL) {
+		parent::__construct($message, $code);
+		$this->message .= chr(10) . 'Result body:' . chr(10) . $body;
+	}
+
 }
 ?>
