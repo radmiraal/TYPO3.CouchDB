@@ -24,6 +24,10 @@ namespace TYPO3\CouchDB\Persistence\Backend;
 use Doctrine\ORM\Mapping as ORM;
 use TYPO3\FLOW3\Annotations as FLOW3;
 
+use TYPO3\CouchDB\Client;
+use TYPO3\CouchDB\Domain\Index\LuceneIndex;
+use TYPO3\CouchDB\ViewInterface;
+
 /**
  * A CouchDB persistence backend
  *
@@ -420,7 +424,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			$identifier = $this->persistenceSession->getIdentifierByObject($object);
 			$rawResponse = $this->client->getDocumentInformation($identifier);
 			return $rawResponse->getRevision();
-		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch(Client\NotFoundException $notFoundException) {
 			return NULL;
 		}
 	}
@@ -433,7 +437,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function storeView(\TYPO3\CouchDB\ViewInterface $view) {
+	public function storeView(ViewInterface $view) {
 		try {
 			$design = $this->doOperation(function($client) use ($view) {
 				return $client->getDocument('_design/' . $view->getDesignName());
@@ -442,7 +446,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			if (isset($design->views->{$view->getViewName()})) {
 				return;
 			}
-		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch(Client\NotFoundException $notFoundException) {
 			$design = new \stdClass();
 			$design->_id = '_design/' . $view->getDesignName();
 			$design->views = new \stdClass();
@@ -479,7 +483,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			$design = $this->doOperation(function($client) use ($designName) {
 				return $client->getDocument('_design/' . $designName);
 			});
-		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch(Client\NotFoundException $notFoundException) {
 			// Design does not exist, nothing to remove
 			return;
 		}
@@ -504,7 +508,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return void
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 */
-	public function storeIndex(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index, array $arguments) {
+	public function storeIndex(LuceneIndex $index, array $arguments) {
 		try {
 			$design = $this->doOperation(function($client) use ($index) {
 				return $client->getDocument('_design/' . $index->getIndexName());
@@ -513,7 +517,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			if (isset($design->{$index->getIndexType()}->search)) {
 				return;
 			}
-		} catch (\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch (Client\NotFoundException $notFoundException) {
 			$design = new \stdClass();
 			$design->_id = '_design/' . $index->getIndexName();
 			$design->{$index->getIndexType()} = new \stdClass();
@@ -570,7 +574,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			$doc = $this->doOperation(function($client) use ($identifier) {
 				return $client->getDocument($identifier);
 			});
-		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+		} catch(Client\NotFoundException $notFoundException) {
 			$doc = NULL;
 		}
 		if ($doc === NULL) {
@@ -606,7 +610,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return array Array of object data
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function getObjectDataByView(\TYPO3\CouchDB\ViewInterface $view, array $arguments) {
+	public function getObjectDataByView(ViewInterface $view, array $arguments) {
 		$result = $this->queryView($view, $arguments);
 		if ($result !== NULL) {
 			return $this->documentsToObjectData($this->resultToDocuments($result));
@@ -623,7 +627,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return array Array of object data
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 */
-	public function getObjectDataByIndex(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index, array $arguments) {
+	public function getObjectDataByIndex(LuceneIndex $index, array $arguments) {
 		$result = $this->queryIndex($index, $arguments);
 		if ($result !== NULL) {
 			return $this->documentsToObjectData($this->resultToDocuments($result));
@@ -640,12 +644,12 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @param array $arguments
 	 * @return object The results of the view
 	 */
-	public function queryView(\TYPO3\CouchDB\ViewInterface $view, array $arguments) {
+	public function queryView(ViewInterface $view, array $arguments) {
 		$that = $this;
 		return $this->doOperation(function($client) use ($view, &$arguments, $that) {
 			try {
 				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
-			} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
+			} catch(Client\NotFoundException $notFoundException) {
 				$that->storeView($view);
 				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
 			}
@@ -661,12 +665,12 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	public function queryIndex(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index, array $arguments) {
+	public function queryIndex(LuceneIndex $index, array $arguments) {
 		$that = $this;
 		return $this->doOperation(function($client) use ($index, &$arguments, $that) {
 			try {
 				return $client->queryIndex($index->getIndexName(), $index->getIndexType(), $index->buildIndexParameters($arguments));
-			} catch(\TYPO3\CouchDB\Client\ClientException $clientException) {
+			} catch(Client\ClientException $clientException) {
 				$information = $clientException->getInformation();
 				if ($information['reason'] === 'no_such_view') {
 					$that->storeIndex($index, $arguments);
@@ -718,7 +722,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		}
 
 		if (count($identifiersToFetch) > 0) {
-			$documents = $this->resultToDocuments($this->doOperation(function(\TYPO3\CouchDB\Client $client) use ($identifiersToFetch) {
+			$documents = $this->resultToDocuments($this->doOperation(function(Client $client) use ($identifiersToFetch) {
 				return $client->getDocuments(array_keys($identifiersToFetch), array('include_docs' => TRUE));
 			}));
 
@@ -811,7 +815,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	protected function doOperation(\Closure $couchDbOperation) {
 		try {
 			return $couchDbOperation($this->client);
-		} catch(\TYPO3\CouchDB\Client\ClientException $clientException) {
+		} catch(Client\ClientException $clientException) {
 			$information = $clientException->getInformation();
 			if (isset($information['error']) && $information['error'] === 'not_found' && $information['reason'] === 'no_db_file') {
 				if ($this->client->createDatabase($this->databaseName)) {
