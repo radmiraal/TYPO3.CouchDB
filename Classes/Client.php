@@ -364,7 +364,7 @@ class Client {
 	 */
 	protected function checkDocumentId($id) {
 		if (!preg_match(self::PATTERN_DOCUMENT_ID, $id)) {
-			throw new \TYPO3\FLOW3\Persistence\Exception('Invalid document id: ' . $id, 1317125883);
+			throw new \TYPO3\FLOW3\Persistence\Exception('Invalid document id: [' . $id . ']', 1317125883);
 		}
 	}
 
