@@ -97,7 +97,7 @@ class Flow3Design extends \TYPO3\CouchDB\DesignDocument {
 	 *
 	 * @param string $identifier
 	 * @param integer $limit Limit for safety, defaults to 10000
-	 * @return array
+	 * @return array Ids of documents that reference the given identifier
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function entityReferences($identifier, $limit = 10000) {

@@ -193,7 +193,8 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function processDeletedObjects() {
-		foreach ($this->deletedEntities as $entity) {
+		$objectsToDelete = clone $this->deletedEntities;
+		foreach ($objectsToDelete as $entity) {
 			if ($this->persistenceSession->hasObject($entity)) {
 				$this->reallyRemoveEntity($entity);
 				$this->persistenceSession->unregisterReconstitutedEntity($entity);
@@ -328,17 +329,39 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		$revision = $this->getRevisionByObject($object);
 
 		$this->removeEntitiesByParent($identifier);
-
-		$references = $this->flow3Design->entityReferences($identifier);
-		if (count($references) > 0) {
-			throw new \TYPO3\FLOW3\Persistence\Exception('Wont remove entity "' . $identifier . '", still referenced', 1316526986);
-		}
+		$this->checkEntityReferencesForDeletion($identifier);
 
 		$this->doOperation(function($client) use ($identifier, $revision) {
 			return $client->deleteDocument($identifier, $revision);
 		});
 
 		$this->emitRemovedObject($object);
+	}
+
+	/**
+	 * Test if any entity exists that holds a reference to the entity being
+	 * deleted and is not marked for deletion itself.
+	 *
+	 * @param type $identifier Identifier of the entity to check
+	 * @return void
+	 */
+	protected function checkEntityReferencesForDeletion($identifier) {
+		$referencedIdentifier = $this->flow3Design->entityReferences($identifier);
+		$referenceByIdentifier = array();
+		foreach ($referencedIdentifier as $reference) {
+			$referenceByIdentifier[$reference] = TRUE;
+		}
+
+		foreach ($this->deletedEntities as $deletedEntity) {
+			$deletedEntityIdentifier = $this->persistenceSession->getIdentifierByObject($deletedEntity);
+			if (isset($referenceByIdentifier[$deletedEntityIdentifier])) {
+				unset($referenceByIdentifier[$deletedEntityIdentifier]);
+			}
+		}
+
+		if (count($referenceByIdentifier) > 0) {
+			throw new \TYPO3\FLOW3\Persistence\Exception('Wont remove entity "' . $identifier . '", still referenced from ' . implode(', ', array_keys($referenceByIdentifier)), 1316526986);
+		}
 	}
 
 	/**
