@@ -1106,5 +1106,27 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$this->markTestIncomplete('Not implemented');
 	}
 
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeIndexDoesRemoveDesignDocumentForIndex() {
+		$mockIndex = $this->getMock('TYPO3\CouchDB\Domain\Index\LuceneIndex');
+		$mockIndex->expects($this->any())->method('getIndexName')->will($this->returnValue('lucene_myIndexName'));
+
+		$designDocument = new \stdClass();
+		$designDocument->_id = '_design/lucene_myIndexName';
+		$designDocument->_rev = '42-abc';
+
+		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
+		$mockClient->expects($this->once())->method('getDocument')->with('_design/lucene_myIndexName')->will($this->returnValue($designDocument));
+		$mockClient->expects($this->once())->method('deleteDocument')->with('_design/lucene_myIndexName', '42-abc');
+
+		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
+		$backend->_set('client', $mockClient);
+
+		$backend->removeIndex($mockIndex);
+	}
+
 }
 ?>

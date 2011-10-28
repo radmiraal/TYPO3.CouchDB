@@ -536,6 +536,26 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	}
 
 	/**
+	 * Explicitly remove an index to invalidate it
+	 *
+	 * Should be called after changes to index documents to
+	 * rebuild or drop the Lucene index.
+	 *
+	 * @param \TYPO3\CouchDB\Domain\Index\LuceneIndex $index The index to remove
+	 * @return void
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeIndex(LuceneIndex $index) {
+		$indexName = $index->getIndexName();
+		try {
+			$this->doOperation(function(Client $client) use ($indexName) {
+				$document = $client->getDocument('_design/' . $indexName);
+				return $client->deleteDocument($document->_id, $document->_rev);
+			});
+		} catch(Client\NotFoundException $notFoundException) {}
+	}
+
+	/**
 	 * Returns the number of records matching the query.
 	 *
 	 * @param \TYPO3\FLOW3\Persistence\QueryInterface $query
