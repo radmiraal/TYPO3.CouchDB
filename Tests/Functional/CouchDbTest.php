@@ -67,9 +67,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function tearDownPersistence() {
 		$this->persistenceManager->persistAll();
-
-		$persistenceSession = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Session');
-		$persistenceSession->destroy();
+		$this->persistenceManager->clearState();
 	}
 
 	/**
