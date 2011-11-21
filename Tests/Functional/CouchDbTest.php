@@ -76,7 +76,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function backendIsCouchDbBackend() {
 		$backend = $this->objectManager->get('TYPO3\FLOW3\Persistence\Generic\Backend\BackendInterface');
-		$this->assertType('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', $backend);
+		$this->assertInstanceOf('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', $backend);
 	}
 
 	/**
@@ -85,7 +85,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function createEntity() {
 		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
-		$this->assertType('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity', $entity);
+		$this->assertInstanceOf('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity', $entity);
 	}
 
 	/**

@@ -448,6 +448,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
 		$mockFlow3Design = $this->getMock('TYPO3\CouchDB\Persistence\Backend\Flow3Design', array(), array(), '', FALSE);
+		$mockFlow3Design->expects($this->any())->method('entityReferences')->will($this->returnValue(array()));
 
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('xyz'));
@@ -470,6 +471,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	public function reallyRemoveEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
 		$mockObject = $this->getMock('TYPO3\FLOW3\AOP\ProxyInterface');
 		$mockFlow3Design = $this->getMock('TYPO3\CouchDB\Persistence\Backend\Flow3Design', array(), array(), '', FALSE);
+		$mockFlow3Design->expects($this->any())->method('entityReferences')->will($this->returnValue(array()));
 
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('xyz'));
