@@ -26,9 +26,6 @@ use TYPO3\FLOW3\Annotations as FLOW3;
 
 /**
  * A CouchDB log backend
- *
- * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @todo Implement log reader interface
  */
 class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 
@@ -48,11 +45,26 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	protected $client;
 
 	/**
-	 * @var array
+	 * @var \TYPO3\CouchDB\Log\Design\LogReaderDesign
 	 */
-	protected $severityLabels;
+	protected $reader;
 
 	/**
+	 * @var array
+	 */
+	protected $severityLabels = array(
+		LOG_EMERG   => 'emergency',
+		LOG_ALERT   => 'alert',
+		LOG_CRIT    => 'critical',
+		LOG_ERR     => 'error',
+		LOG_WARNING => 'warning',
+		LOG_NOTICE  => 'notice',
+		LOG_INFO    => 'info',
+		LOG_DEBUG   => 'debug',
+	);
+
+	/**
+	 * Default design document name for reading logs
 	 * @var string
 	 */
 	protected $designName = 'FLOW3_Internal';
@@ -78,20 +90,13 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	 * @api
 	 */
 	public function open() {
-		$this->severityLabels = array(
-			LOG_EMERG   => 'emergency',
-			LOG_ALERT   => 'alert',
-			LOG_CRIT    => 'critical',
-			LOG_ERR     => 'error',
-			LOG_WARNING => 'warning',
-			LOG_NOTICE  => 'notice',
-			LOG_INFO    => 'info',
-			LOG_DEBUG   => 'debug',
-		);
 		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
 		if ($this->databaseName !== NULL) {
 			$this->client->setDatabaseName($this->databaseName);
 		}
+		$this->reader = new \TYPO3\CouchDB\Log\Design\LogReaderDesign();
+		$this->reader->setDesignName($this->designName);
+		$this->reader->setClient($this->client);
 	}
 
 	/**
@@ -158,24 +163,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function read($offset = 0, $limit = 100, $severityThreshold = LOG_DEBUG, $fromTimestamp = NULL, $toTimestamp = NULL) {
-		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
-		$parameters = array();
-		if ($fromTimestamp !== NULL) {
-			$parameters['endkey'] = intval($fromTimestamp);
-		}
-		if ($toTimestamp !== NULL) {
-			$parameters['startkey'] = intval($toTimestamp);
-		}
-		try {
-			return $this->readView($viewName, $offset, $limit, $parameters);
-		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
-			$information = $notFoundException->getInformation();
-			if ($information['reason'] === 'no_db_file' || $information['reason'] === 'missing' || $information['reason'] === 'deleted') {
-				$this->initializeDatabase();
-				return $this->readView($viewName, $offset, $limit);
-			}
-			throw $notFoundException;
-		}
+		return $this->reader->read($offset, $limit, $this->severityLabels[$severityThreshold], $fromTimestamp, $toTimestamp);
 	}
 
 	/**
@@ -188,42 +176,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function count($severityThreshold = LOG_DEBUG, $fromTimestamp = NULL, $toTimestamp = NULL) {
-		$viewName = 'greaterEqual' . ucfirst($this->severityLabels[$severityThreshold]);
-		$parameters = array('reduce' => TRUE, 'descending' => TRUE);
-		if ($fromTimestamp !== NULL) {
-			$parameters['endkey'] = intval($fromTimestamp);
-		}
-		if ($toTimestamp !== NULL) {
-			$parameters['startkey'] = intval($toTimestamp);
-		}
-		try {
-			$result =  $this->client->queryView($this->designName, $viewName, $parameters);
-			if (isset($result->rows) && isset($result->rows[0])) {
-				return $result->rows[0]->value;
-			} else {
-				return 0;
-			}
-		} catch(\TYPO3\CouchDB\Client\NotFoundException $notFoundException) {
-			return 0;
-		}
-	}
-
-	/**
-	 * Read log entries from the given view
-	 *
-	 * @param string $viewName
-	 * @param integer $offset
-	 * @param integer $limit
-	 * @param array $parameters
-	 * @return array
-	 * @author Christopher Hlubek <hlubek@networkteam.com>
-	 */
-	protected function readView($viewName, $offset, $limit, array $parameters = array()) {
-		$options = array_merge(array(
-			'reduce' => FALSE, 'include_docs' => TRUE, 'descending' => TRUE, 'skip' => $offset, 'limit' => $limit, 'decodeAssociativeArray' => TRUE
-		), $parameters);
-		$result = $this->client->queryView($this->designName, $viewName, $options);
-		return array_map(function($row) { return $row['doc']; }, $result['rows']);
+		return $this->reader->count($this->severityLabels[$severityThreshold], $fromTimestamp, $toTimestamp);
 	}
 
 	/**
@@ -237,43 +190,6 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 		if (!$this->client->databaseExists($this->databaseName)) {
 			$this->client->createDatabase($this->databaseName);
 		}
-		$this->client->createDocument(array(
-			'_id' => '_design/' . $this->designName,
-			'views' => array(
-				'greaterEqualDebug' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_DEBUG . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualInfo' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_INFO. '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualNotice' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_NOTICE . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualWarning' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_WARNING . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualError' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_ERR . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualCrit' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_CRIT . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualAlert' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_ALERT . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				),
-				'greaterEqualEmerg' => array(
-					'map' => 'function(doc){if(doc.severity<=' . LOG_EMERG . '){emit(doc.timestamp,null);}}',
-					'reduce' => '_count'
-				)
-			)
-		));
 	}
 
 	/**
