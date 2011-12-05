@@ -64,6 +64,16 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	protected $databaseName = NULL;
 
 	/**
+	 * @var boolean
+	 */
+	protected $logSlowQueries = FALSE;
+
+	/**
+	 * @var float
+	 */
+	protected $slowQueryThreshold = 0.5;
+
+	/**
 	 * @var \TYPO3\CouchDB\EntityByParentIdentifierView
 	 */
 	protected $entityByParentIdentifierView;
@@ -95,6 +105,22 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	}
 
 	/**
+	 * @param boolean $logSlowQueries
+	 * @return void
+	 */
+	public function setLogSlowQueries($logSlowQueries) {
+		$this->logSlowQueries = $logSlowQueries;
+	}
+
+	/**
+	 * @param float $slowQueryThreshold
+	 * @return void
+	 */
+	public function setSlowQueryThreshold($slowQueryThreshold) {
+		$this->slowQueryThreshold = $slowQueryThreshold;
+	}
+
+	/**
 	 * @param \TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager
 	 * @return void
 	 */
@@ -121,7 +147,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return void
 	 */
 	protected function connect() {
-		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
+		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName, array('logSlowQueries' => $this->logSlowQueries, 'slowQueryThreshold' => $this->slowQueryThreshold));
 		if ($this->databaseName !== NULL) {
 			$this->client->setDatabaseName($this->databaseName);
 		}
@@ -690,11 +716,12 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	public function queryView(ViewInterface $view, array $arguments) {
 		$that = $this;
 		return $this->doOperation(function($client) use ($view, &$arguments, $that) {
+			$parameters = $view->buildViewParameters($arguments);
 			try {
-				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
+				return $client->queryView($view->getDesignName(), $view->getViewName(), $parameters);
 			} catch(Client\NotFoundException $notFoundException) {
 				$that->storeView($view);
-				return $client->queryView($view->getDesignName(), $view->getViewName(), $view->buildViewParameters($arguments));
+				return $client->queryView($view->getDesignName(), $view->getViewName(), $parameters);
 			}
 		});
 	}

@@ -6,3 +6,15 @@ TYPO3\FLOW3\Persistence\Generic\PersistenceManager:
   properties:
     backend:
       object: TYPO3\CouchDB\Persistence\Backend\CouchDbBackend
+TYPO3\CouchDB\Persistence\QueryLoggerInterface:
+  scope: singleton
+  factoryObjectName: TYPO3\FLOW3\Log\LoggerFactory
+  arguments:
+    1:
+      value: TYPO3_CouchDB
+    2:
+      value: TYPO3\FLOW3\Log\Logger
+    3:
+      setting: TYPO3.CouchDB.log.queryLogger.backend
+    4:
+      setting: TYPO3.CouchDB.log.queryLogger.backendOptions

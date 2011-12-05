@@ -53,6 +53,23 @@ class Client {
 	protected $databaseName;
 
 	/**
+	 * @FLOW3\Inject
+	 * @var \TYPO3\CouchDB\Persistence\QueryLoggerInterface
+	 */
+	protected $queryLogger;
+
+	/**
+	 * @var boolean
+	 */
+	protected $logSlowQueries = FALSE;
+
+	/**
+	 * Default slow query threshold is 0.5 seconds
+	 * @var float
+	 */
+	protected $slowQueryThreshold = 0.5;
+
+	/**
 	 * Create a new CouchDB client
 	 *
 	 * Pass a path after the host and port to set a database automatically
@@ -66,6 +83,14 @@ class Client {
 	public function __construct($dataSourceName, array $options = array()) {
 		$this->dataSourceName = $dataSourceName;
 		$this->options = $options;
+		if (isset($this->options['logSlowQueries'])) {
+			$this->logSlowQueries = (boolean)$this->options['logSlowQueries'];
+			unset($this->options['logSlowQueries']);
+		}
+		if (isset($this->options['slowQueryThreshold'])) {
+			$this->slowQueryThreshold = (float)$this->options['slowQueryThreshold'];
+			unset($this->options['slowQueryThreshold']);
+		}
 	}
 
 	/**
@@ -293,13 +318,24 @@ class Client {
 	public function queryView($designDocumentName, $viewName, array $queryOptions = NULL) {
 		$requestOptions = $this->extractRequestOptions($queryOptions);
 		$path = '/' . urlencode($this->getDatabaseName()) . '/_design/' . urlencode($designDocumentName) . '/_view/' . urlencode($viewName);
+		if ($this->logSlowQueries) {
+			$startTime = microtime(TRUE);
+		}
 		if ($queryOptions === NULL || !isset($queryOptions['keys'])) {
-			return $this->connector->get($path, $queryOptions, NULL, $requestOptions);
+			$result = $this->connector->get($path, $queryOptions, NULL, $requestOptions);
 		} else {
 			$keys = $queryOptions['keys'];
 			unset($queryOptions['keys']);
-			return $this->connector->post($path, $queryOptions, json_encode(array('keys' => $keys)), $requestOptions);
+			$result = $this->connector->post($path, $queryOptions, json_encode(array('keys' => $keys)), $requestOptions);
 		}
+		if ($this->logSlowQueries) {
+			$endTime = microtime(TRUE);
+			$totalTime = $endTime - $startTime;
+			if ($totalTime > $this->slowQueryThreshold) {
+				$this->queryLogger->log('Slow query for view: ' . $viewName, LOG_WARNING, array('time' =>  $totalTime, 'path' => $path, 'queryOptions' => $queryOptions, 'requestOptions' => $requestOptions));
+			}
+		}
+		return $result;
 	}
 
 	/**
