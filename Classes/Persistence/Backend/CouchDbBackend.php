@@ -24,6 +24,7 @@ namespace TYPO3\CouchDB\Persistence\Backend;
 use Doctrine\ORM\Mapping as ORM;
 use TYPO3\FLOW3\Annotations as FLOW3;
 
+use TYPO3\FLOW3\Reflection\ClassSchema;
 use TYPO3\CouchDB\Client;
 use TYPO3\CouchDB\Domain\Index\LuceneIndex;
 use TYPO3\CouchDB\ViewInterface;
@@ -137,7 +138,6 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 */
 	public function initialize(array $options) {
 		parent::initialize($options);
-		$this->classSchemata = $this->reflectionService->getClassSchemata();
 		$this->connect();
 	}
 
@@ -190,7 +190,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			$objectState = self::OBJECTSTATE_NEW;
 		}
 
-		$classSchema = $this->classSchemata[get_class($object)];
+		$classSchema = $this->reflectionService->getClassSchema($object);
 		$dirty = FALSE;
 		$objectData = array(
 			'identifier' => $identifier,
@@ -330,8 +330,8 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
 			foreach ($result->rows as $row) {
 				$object = $this->persistenceSession->getObjectByIdentifier($row->id);
-				if ($this->classSchemata[get_class($object)]->getModelType() === \TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY
-						&& $this->classSchemata[get_class($object)]->isAggregateRoot() === FALSE) {
+				$classSchema = $this->reflectionService->getClassSchema($object);
+				if ($classSchema->getModelType() === ClassSchema::MODELTYPE_ENTITY && !$classSchema->isAggregateRoot()) {
 					$this->reallyRemoveEntity($object);
 				}
 			};
@@ -435,8 +435,8 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 */
 	protected function processObject($object, $parentIdentifier) {
 		$className = get_class($object);
-		$classSchema = $this->classSchemata[$className];
-		if ($classSchema->getModelType() === \TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_VALUEOBJECT) {
+		$classSchema = $this->reflectionService->getClassSchema($className);
+		if ($classSchema->getModelType() === ClassSchema::MODELTYPE_VALUEOBJECT) {
 			$valueIdentifier = $this->persistenceSession->getIdentifierByObject($object);
 			$noDirtyOnValueObject = FALSE;
 			return array(
@@ -782,11 +782,11 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			if (!isset($objectData['classname'])) {
 				throw new \TYPO3\CouchDB\InvalidResultException('Expected property "classname" in document', 1290442039, NULL, $document);
 			}
-			if (!isset($this->classSchemata[$objectData['classname']])) {
+			if (!$this->reflectionService->isClassReflected($objectData['classname'])) {
 				throw new \TYPO3\CouchDB\InvalidResultException('Class "' . $objectData['classname'] . '" was not registered', 1290442092, NULL, $document);
 			}
 
-			$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$objectData['classname']]);
+			$this->processResultProperties($objectData['properties'], $identifiersToFetch, $knownObjects, $this->reflectionService->getClassSchema($objectData['classname']));
 
 			$data[] = $objectData;
 		}
@@ -817,7 +817,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function processResultProperties(array &$properties, array &$identifiersToFetch, array &$knownObjects, \TYPO3\FLOW3\Reflection\ClassSchema $classSchema) {
+	protected function processResultProperties(array &$properties, array &$identifiersToFetch, array &$knownObjects, ClassSchema $classSchema) {
 		foreach ($properties as $propertyName => &$propertyData) {
 				// Skip unknown properties
 			if (!$classSchema->hasProperty($propertyName)) {
@@ -835,7 +835,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 						$propertyData['value'] = array('identifier' => $propertyData['value']['identifier'], 'classname' => $propertyData['type'], 'properties' => array());
 					}
 				} elseif (is_array($propertyData['value']) && isset($propertyData['value']['properties'])) {
-					$this->processResultProperties($propertyData['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value']['classname']]);
+					$this->processResultProperties($propertyData['value']['properties'], $identifiersToFetch, $knownObjects, $this->reflectionService->getClassSchema($propertyData['value']['classname']));
 				}
 			} else {
 				for ($index = 0; $index < count($propertyData['value']); $index++) {
@@ -849,7 +849,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 							$propertyData['value'][$index]['value'] = array('identifier' => $propertyData['value'][$index]['value']['identifier'], 'classname' => $propertyData['value'][$index]['type'], 'properties' => array());
 						}
 					} elseif (is_array($propertyData['value']) && isset($propertyData['value'][$index]['value']['properties']) && is_array($propertyData['value'][$index]['value'])) {
-						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects, $this->classSchemata[$propertyData['value'][$index]['value']['classname']]);
+						$this->processResultProperties($propertyData['value'][$index]['value']['properties'], $identifiersToFetch, $knownObjects, $this->reflectionService->getClassSchema($propertyData['value'][$index]['value']['classname']));
 					}
 				}
 			}
