@@ -868,7 +868,11 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			throw new \TYPO3\CouchDB\InvalidResultException('Expected property "rows" in result', 1290693732, NULL, $result);
 		}
 		return array_map(function($row) {
-			if (!isset($row->doc) && !isset($row->value)) {
+			if (isset($row->error) && $row->error === 'not_found') {
+				return (object)array(
+					'deleted' => TRUE
+				);
+			} elseif (!isset($row->doc) && !isset($row->value)) {
 				throw new \TYPO3\CouchDB\InvalidResultException('Expected property "doc" or "value" in row, got ' . var_export($row, TRUE), 1290693735, NULL, $row);
 			}
 			return isset($row->doc) && $row->doc !== NULL ? $row->doc : $row->value;
