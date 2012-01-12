@@ -191,6 +191,10 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		}
 
 		$classSchema = $this->reflectionService->getClassSchema($object);
+		if ($classSchema === NULL) {
+			throw new \TYPO3\FLOW3\Persistence\Exception('Could not get class schema for object', 1326384087);
+		}
+
 		$dirty = FALSE;
 		$objectData = array(
 			'identifier' => $identifier,
@@ -357,9 +361,33 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		$this->removeEntitiesByParent($identifier);
 		$this->checkEntityReferencesForDeletion($identifier);
 
-		$this->doOperation(function($client) use ($identifier, $revision) {
-			return $client->deleteDocument($identifier, $revision);
-		});
+		$removeStrategyAnnotation = $this->reflectionService->getClassAnnotation(get_class($object), '\TYPO3\CouchDB\Annotations\RemoveStrategy');
+		$removeStrategy = $removeStrategyAnnotation !== NULL ? $removeStrategyAnnotation->strategy : NULL;
+		switch ($removeStrategy) {
+			case \TYPO3\CouchDB\Annotations\RemoveStrategy::STRATEGY_KEEP_ID:
+				$this->doOperation(function(Client $client) use ($identifier, $revision) {
+					$document = array(
+						'_id' => $identifier,
+						'_rev' => $revision,
+						'deleted' => TRUE
+					);
+					return $client->updateDocument($document, $identifier);
+				});
+				break;
+			case \TYPO3\CouchDB\Annotations\RemoveStrategy::STRATEGY_SOFT_DELETE:
+				$this->doOperation(function(Client $client) use ($identifier, $revision) {
+					$document = $client->getDocument($identifier, array('decodeAssociativeArray' => TRUE));
+					$document['deleted'] = TRUE;
+					return $client->updateDocument($document, $identifier);
+				});
+				break;
+			case \TYPO3\CouchDB\Annotations\RemoveStrategy::STRATEGY_DELETE:
+			default:
+				$this->doOperation(function(Client $client) use ($identifier, $revision) {
+					return $client->deleteDocument($identifier, $revision);
+				});
+				break;
+		}
 
 		$this->emitRemovedObject($object);
 	}
@@ -650,7 +678,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 			return FALSE;
 		}
 		$data = $this->documentsToObjectData(array($doc));
-		return $data[0];
+		return count($data) > 0 ? $data[0] : FALSE;
 	}
 
 	/**

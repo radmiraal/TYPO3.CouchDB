@@ -656,6 +656,162 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	}
 
 	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectByIdentifierWithSoftDeletedEntityIsNull() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestSoftDeletedEntityRepository');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestSoftDeletedEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+		$this->assertNotNull($entity);
+
+		$repository->remove($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+
+		$this->assertNull($entity);
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function getObjectByIdentifierWithKeepIdEntityIsNull() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestKeepIdEntityRepository');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestKeepIdEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+		$this->assertNotNull($entity);
+
+		$repository->remove($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+
+		$this->assertNull($entity);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CouchDB\Client\ConflictException
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeSoftDeletedEntityWillKeepIdentifier() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestSoftDeletedEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestSoftDeletedEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+		$this->assertNotNull($entity);
+
+		$repository->remove($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestSoftDeletedEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		try {
+			$this->tearDownPersistence();
+		} catch(\TYPO3\CouchDB\Client\ConflictException $exception) {
+			$this->persistenceManager->clearState();
+			throw $exception;
+		}
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CouchDB\Client\ConflictException
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function removeKeepIdEntityWillKeepIdentifier() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestKeepIdEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestKeepIdEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+		$this->assertNotNull($entity);
+
+		$repository->remove($entity);
+
+		$this->tearDownPersistence();
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestKeepIdEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		try {
+			$this->tearDownPersistence();
+		} catch(\TYPO3\CouchDB\Client\ConflictException $exception) {
+			$this->persistenceManager->clearState();
+			throw $exception;
+		}
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function countAllWithDeletedSoftDeleteEntityWillReturnZero() {
+		$this->markTestIncomplete('This feature needs a change to the view code');
+	}
+
+	/**
+	 * @test
+	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 */
+	public function countAllWithDeletedKeepIdEntityWillReturnZero() {
+		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestKeepIdEntityRepository');
+
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestKeepIdEntity();
+		$entity->setSpecialId('MySpecialId');
+		$repository->add($entity);
+
+		$identifier = $this->persistenceManager->getIdentifierByObject($entity);
+
+		$this->tearDownPersistence();
+
+		$this->assertEquals(1, $repository->countAll());
+
+		$entity = $this->persistenceManager->getObjectByIdentifier($identifier);
+
+		$repository->remove($entity);
+
+		$this->tearDownPersistence();
+
+		$this->assertEquals(0, $repository->countAll(), 'Soft deleted entity should not count to result');
+	}
+
+	/**
 	 * Delete the database
 	 *
 	 * @return void
