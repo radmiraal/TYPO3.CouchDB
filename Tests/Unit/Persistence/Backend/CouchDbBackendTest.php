@@ -33,12 +33,8 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function initializeConnectsToCouchDb() {
-		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
-		$mockReflectionService->expects($this->any())->method('getClassSchemata');
-
 		$backend = $this->getMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('connect'));
 		$backend->expects($this->once())->method('connect');
-		$backend->injectReflectionService($mockReflectionService);
 
 		$backend->initialize(array('database' => 'foo', 'dataSourceName' => 'http://1.2.3.4:5678'));
 	}
@@ -80,8 +76,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 			->with($object)
 			->will($this->returnValue(TRUE));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
-		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
+		$backend->injectReflectionService($mockReflectionService);
+
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$objectData = array();
 		$result = $backend->_call('storeObject', $object, $identifier, NULL, $objectData);
@@ -107,9 +107,13 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 			->will($this->returnValue(FALSE));
 		$mockPersistenceSession->expects($this->once())->method('registerObject')->with($this->anything(), $identifier);
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
-		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
 		$backend->injectPersistenceSession($mockPersistenceSession);
+		$backend->injectReflectionService($mockReflectionService);
+
 		$objectData = array();
 		$result = $backend->_call('storeObject', $object, $identifier, NULL, $objectData);
 
@@ -135,9 +139,13 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 			->method('hasObject')
 			->will($this->returnValue(FALSE));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectMetadata', 'collectProperties', 'validateObject', 'storeObjectDocument'));
 		$backend->_set('classSchemata', array(get_class($object) => $mockClassSchema));
 		$backend->injectPersistenceSession($mockPersistenceSession);
+		$backend->injectReflectionService($mockReflectionService);
 
 		$collectedProperties = array('foo' => 'bar', 'bar' => 'baz');
 		$backend->expects($this->any())->method('collectProperties')->with($identifier, $this->anything(), $classSchemaProperties, FALSE)->will($this->returnValue($collectedProperties));
@@ -390,9 +398,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 		$mockClassSchema->expects($this->any())->method('isAggregateRoot')->will($this->returnValue(FALSE));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity', 'reallyRemoveEntity'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
-		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
+		$backend->injectReflectionService($mockReflectionService);
 
 		$row = new \stdClass();
 		$row->id = 'xyz';
@@ -422,9 +433,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 		$mockClassSchema->expects($this->any())->method('isAggregateRoot')->will($this->returnValue(TRUE));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'getEntityByParentIdentifierView', 'removeEntity'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
-		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
+		$backend->injectReflectionService($mockReflectionService);
 
 		$row = new \stdClass();
 		$row->id = 'xyz';
@@ -453,10 +467,13 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('xyz'));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->_set('client', $mockClient);
 		$backend->_set('flow3Design', $mockFlow3Design);
+		$backend->injectReflectionService($mockReflectionService);
 
 		$backend->expects($this->once())->method('getRevisionByObject')->with($mockObject)->will($this->returnValue('5-revisionid'));
 		$mockClient->expects($this->once())->method('deleteDocument')->with('xyz', '5-revisionid');
@@ -476,9 +493,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('xyz'));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation', 'removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->_set('flow3Design', $mockFlow3Design);
+		$backend->injectReflectionService($mockReflectionService);
 
 		$backend->expects($this->any())->method('getRevisionByObject')->will($this->returnValue('7-abc'));
 		$backend->expects($this->once())->method('removeEntitiesByParent')->with('xyz');
@@ -510,9 +530,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema = $this->getMock('TYPO3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'persistObject'));
 		$backend->expects($this->once())->method('persistObject')->with($mockObject, 'xyz')->will($this->returnValue('abc'));
-		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
+		$backend->injectReflectionService($mockReflectionService);
 
 		$result = $backend->_call('processObject', $mockObject, 'xyz');
 		$this->assertEquals(array(
@@ -530,9 +553,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema = $this->getMock('TYPO3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchema->expects($this->any())->method('getModelType')->will($this->returnValue(\TYPO3\FLOW3\Reflection\ClassSchema::MODELTYPE_ENTITY));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('getIdentifierByObject', 'persistObject'));
 		$backend->expects($this->once())->method('persistObject')->with($mockObject, 'xyz')->will($this->returnValue('abc'));
-		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
+		$backend->injectReflectionService($mockReflectionService);
 
 		$result = $backend->_call('processObject', $mockObject, 'xyz');
 		$this->assertEquals(array(
@@ -555,13 +581,16 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchema->expects($this->any())->method('getProperties')->will($this->returnValue($properties));
 		$mockClassSchema->expects($this->any())->method('getClassName')->will($this->returnValue($properties));
 
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
 		$mockPersistenceSession = $this->getMock('TYPO3\FLOW3\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('abc'));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('collectProperties'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->expects($this->once())->method('collectProperties')->with('abc', $mockObject, $properties, FALSE)->will($this->returnValue(array('foo' => 'bar')));
-		$backend->_set('classSchemata', array(get_class($mockObject) => $mockClassSchema));
+		$backend->injectReflectionService($mockReflectionService);
 
 		$result = $backend->_call('processObject', $mockObject, 'xyz');
 		$this->assertEquals(array(
@@ -852,9 +881,14 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$document->properties->foo->type = 'string';
 		$document->classname = 'FooBar';
 
-		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$mockClassSchema = $this->getMock('TYPO3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
-		$backend->_set('classSchemata', array('FooBar' => $mockClassSchema));
+
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('isClassReflected')->will($this->returnValue(TRUE));
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnValue($mockClassSchema));
+
+		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
+		$backend->injectReflectionService($mockReflectionService);
 
 		$objectData = array(
 			'identifier' => 'abcdefg',
@@ -910,7 +944,20 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchemaFooBar->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$mockClassSchemaBarBaz = $this->getMock('TYPO3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchemaBarBaz->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
-		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
+
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('isClassReflected')->will($this->returnValue(TRUE));
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnCallback(
+				function($className) use ($mockClassSchemaFooBar, $mockClassSchemaBarBaz) {
+					switch ($className) {
+						case 'FooBar':
+							return $mockClassSchemaFooBar;
+						case 'BarBaz':
+							return $mockClassSchemaBarBaz;
+					}
+				}));
+
+		$backend->injectReflectionService($mockReflectionService);
 		$backend->_set('client', $mockClient);
 
 		$mockClient->expects($this->once())->method('getDocuments')->with(array('xyz'), array('include_docs' => TRUE))->will($this->returnValue($nestedResults));
@@ -986,7 +1033,20 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchemaFooBar->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$mockClassSchemaBarBaz = $this->getMock('TYPO3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchemaBarBaz->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
-		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
+
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('isClassReflected')->will($this->returnValue(TRUE));
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnCallback(
+				function($className) use ($mockClassSchemaFooBar, $mockClassSchemaBarBaz) {
+					switch ($className) {
+						case 'FooBar':
+							return $mockClassSchemaFooBar;
+						case 'BarBaz':
+							return $mockClassSchemaBarBaz;
+					}
+				}));
+
+		$backend->injectReflectionService($mockReflectionService);
 		$backend->_set('client', $mockClient);
 
 		$mockClient->expects($this->once())->method('getDocuments')->with(array('xyz'), array('include_docs' => TRUE))->will($this->returnValue($nestedResults));
@@ -1058,7 +1118,20 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockClassSchemaFooBar->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
 		$mockClassSchemaBarBaz = $this->getMock('TYPO3\FLOW3\Reflection\ClassSchema', array(), array(), '', FALSE);
 		$mockClassSchemaBarBaz->expects($this->any())->method('hasProperty')->will($this->returnValue(TRUE));
-		$backend->_set('classSchemata', array('FooBar' => $mockClassSchemaFooBar, 'BarBaz' => $mockClassSchemaBarBaz));
+
+		$mockReflectionService = $this->getMock('TYPO3\FLOW3\Reflection\ReflectionService');
+		$mockReflectionService->expects($this->any())->method('isClassReflected')->will($this->returnValue(TRUE));
+		$mockReflectionService->expects($this->any())->method('getClassSchema')->will($this->returnCallback(
+				function($className) use ($mockClassSchemaFooBar, $mockClassSchemaBarBaz) {
+					switch ($className) {
+						case 'FooBar':
+							return $mockClassSchemaFooBar;
+						case 'BarBaz':
+							return $mockClassSchemaBarBaz;
+					}
+				}));
+
+		$backend->injectReflectionService($mockReflectionService);
 		$backend->_set('client', $mockClient);
 
 		$mockClassSchemaFooBar->expects($this->any())->method('getProperty')->will($this->returnValue(array('lazy' => TRUE)));
