@@ -73,11 +73,11 @@ class CouchDbLuceneTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function queryByLikeReturnsCorrectObjects() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity1 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity1 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity1->setName('FooABCFoo');
 		$repository->add($entity1);
 
-		$entity2 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity2 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity2->setName('BarXYZBar');
 		$repository->add($entity2);
 
@@ -105,15 +105,15 @@ class CouchDbLuceneTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function indexingAndQueryingSingleNestedValueObject() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Some entity');
-		$valueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
+		$valueObject = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('green');
 		$entity->setRelatedValueObject($valueObject);
 		$repository->add($entity);
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Some other entity');
-		$valueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'blue');
+		$valueObject = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('blue');
 		$entity->setRelatedValueObject($valueObject);
 		$repository->add($entity);
 
@@ -136,9 +136,9 @@ class CouchDbLuceneTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function queryingWithLogicalOr() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Some entity');
-		$valueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'green');
+		$valueObject = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('green');
 		$entity->setRelatedValueObject($valueObject);
 		$repository->add($entity);
 

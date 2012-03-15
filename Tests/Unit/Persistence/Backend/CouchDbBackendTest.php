@@ -45,15 +45,11 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function connectCreatesClientWithDataSourceNameAndSetsDatabasename() {
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
-		$mockClient->expects($this->atLeastOnce())->method('setDatabaseName')->with('foo');
-
-		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->atLeastOnce())->method('create')->with('TYPO3\CouchDB\Client', 'http://1.2.3.4:5678')->will($this->returnValue($mockClient));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
-		$backend->injectObjectManager($mockObjectManager);
 		$backend->_set('dataSourceName', 'http://1.2.3.4:5678');
 		$backend->_set('databaseName', 'foo');
+		$backend->_set('client', $mockClient);
 
 		$backend->_call('connect');
 	}
@@ -735,18 +731,14 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\QueryInterface');
 		$mockQueryView =$this->getMock('TYPO3\CouchDB\QueryView', array(), array(), '', FALSE);
 
-		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->once())->method('create')->with('TYPO3\CouchDB\QueryView', $mockQuery)->will($this->returnValue($mockQueryView));
-
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView'));
-		$backend->injectObjectManager($mockObjectManager);
 
 		$result = new \stdClass();
 		$result->rows = array();
 
-		$backend->expects($this->once())->method('queryView')->with($mockQueryView, array('query' => $mockQuery, 'count' => TRUE))->will($this->returnValue($result));
+		$backend->expects($this->once())->method('queryView')->with($this->anything(), array('query' => $mockQuery, 'count' => TRUE))->will($this->returnValue($result));
 
-		$count = $backend->_call('getObjectCountByQuery', $mockQuery);
+		$count = $backend->getObjectCountByQuery($mockQuery);
 		$this->assertEquals(0, $count);
 	}
 
@@ -756,13 +748,8 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 */
 	public function getObjectCountByQueryReturnsValueOfCount() {
 		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\QueryInterface');
-		$mockQueryView =$this->getMock('TYPO3\CouchDB\QueryView', array(), array(), '', FALSE);
-
-		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->any())->method('create')->will($this->returnValue($mockQueryView));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView'));
-		$backend->injectObjectManager($mockObjectManager);
 
 		$row = new \stdClass();
 		$row->value = 42;
@@ -771,7 +758,7 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 
 		$backend->expects($this->any())->method('queryView')->will($this->returnValue($result));
 
-		$count = $backend->_call('getObjectCountByQuery', $mockQuery);
+		$count = $backend->getObjectCountByQuery($mockQuery);
 		$this->assertEquals(42, $count);
 	}
 
@@ -827,15 +814,10 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 		$result->rows = array($row);
 
 		$mockQuery = $this->getMock('TYPO3\FLOW3\Persistence\QueryInterface');
-		$mockQueryView =$this->getMock('TYPO3\CouchDB\QueryView', array(), array(), '', FALSE);
-
-		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->any())->method('create')->will($this->returnValue($mockQueryView));
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('queryView', 'documentsToObjectData'));
-		$backend->injectObjectManager($mockObjectManager);
 
-		$backend->expects($this->once())->method('queryView')->with($mockQueryView)->will($this->returnValue($result));
+		$backend->expects($this->once())->method('queryView')->will($this->returnValue($result));
 		$backend->expects($this->once())->method('documentsToObjectData')->with(array($row->value))->will($this->returnValue(array(array('identifier' => 'xyz'))));
 
 		$objectDataArray = $backend->getObjectDataByQuery($mockQuery);

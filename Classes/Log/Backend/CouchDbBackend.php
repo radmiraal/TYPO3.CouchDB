@@ -70,19 +70,6 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	protected $designName = 'FLOW3_Internal';
 
 	/**
-	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
-	 */
-	protected $objectManager;
-
-	/**
-	 * @param \TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
 	 * Opens the CouchDB connection
 	 *
 	 * @return void
@@ -90,7 +77,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Log\Backend\AbstractBackend {
 	 * @api
 	 */
 	public function open() {
-		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
+		$this->client = new \TYPO3\CouchDB\Client($this->dataSourceName);
 		if ($this->databaseName !== NULL) {
 			$this->client->setDatabaseName($this->databaseName);
 		}

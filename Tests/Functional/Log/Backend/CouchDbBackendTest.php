@@ -57,12 +57,12 @@ class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function setUp() {
 		parent::setUp();
-		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName);
+		$this->client = new \TYPO3\CouchDB\Client($this->dataSourceName);
 		$this->client->setDatabaseName($this->databaseName);
 		if ($this->client->databaseExists($this->databaseName)) {
 			$this->client->deleteDatabase($this->databaseName);
 		}
-		$this->backend = $this->objectManager->create('TYPO3\CouchDB\Log\Backend\CouchDbBackend', array('databaseName' => $this->databaseName, 'dataSourceName' => $this->dataSourceName));
+		$this->backend = new \TYPO3\CouchDB\Log\Backend\CouchDbBackend(array('databaseName' => $this->databaseName, 'dataSourceName' => $this->dataSourceName));
 		$this->backend->open();
 	}
 

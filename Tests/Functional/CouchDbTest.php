@@ -84,7 +84,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function createEntity() {
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$this->assertInstanceOf('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity', $entity);
 	}
 
@@ -94,7 +94,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function persistEntity() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Foobar');
 		$repository->add($entity);
 
@@ -112,7 +112,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	 */
 	public function getObjectByIdentifierLoadsObjectDataFromDocument() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Foobar');
 		$repository->add($entity);
 
@@ -133,11 +133,11 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function queryByEqualsReturnsCorrectObjects() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity1 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity1 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity1->setName('Foo');
 		$repository->add($entity1);
 
-		$entity2 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity2 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity2->setName('Bar');
 		$repository->add($entity2);
 
@@ -161,11 +161,11 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function countyByEqualsReturnsCorrectObjects() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity1 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity1 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity1->setName('Foo');
 		$repository->add($entity1);
 
-		$entity2 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity2 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity2->setName('Bar');
 		$repository->add($entity2);
 
@@ -216,9 +216,9 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function nestedSinglevalueEntityIsFetchedCorrectly() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Foo');
-		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$relatedEntity->setName('Bar');
 		$entity->setRelatedEntity($relatedEntity);
 		$repository->add($entity);
@@ -239,10 +239,10 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function nestedMultivalueArrayCollectionEntityIsFetchedCorrectly() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Entity with nested ArrayCollection entities');
 		$relatedEntities = new \Doctrine\Common\Collections\ArrayCollection();
-		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$relatedEntity->setName('Nested entity');
 		$relatedEntities->add($relatedEntity);
 		$entity->setRelatedEntities($relatedEntities);
@@ -267,15 +267,15 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function nestedMultivalueArrayCollectionEntityWithBidirectionalAssociation() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Entity with nested ArrayCollection entities');
 		$relatedEntities = new \Doctrine\Common\Collections\ArrayCollection();
-		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$relatedEntity->setName('Nested entity 1');
 		$relatedEntity->setRelatedEntity($entity);
 		$relatedEntities->add($relatedEntity);
 		$repository->add($relatedEntity);
-		$relatedEntity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$relatedEntity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$relatedEntity->setName('Nested entity 2');
 		$relatedEntity->setRelatedEntity($entity);
 		$relatedEntities->add($relatedEntity);
@@ -297,10 +297,10 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function nestedMultivalueArrayValueObjectIsHandledCorrectly() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Entity with nested array valueobjects');
-		$relatedValueObject1 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'Red');
-		$relatedValueObject2 = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'Blue');
+		$relatedValueObject1 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('Red');
+		$relatedValueObject2 = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('Blue');
 		$entity->setRelatedValueObjects(array($relatedValueObject1, $relatedValueObject2));
 		$repository->add($entity);
 
@@ -463,9 +463,9 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function valueObjectsDontTriggerDirtyObject() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity();
 		$entity->setName('Entity with single valueobject');
-		$relatedValueObject = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject', 'Red');
+		$relatedValueObject = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestValueObject('Red');
 		$entity->setRelatedValueObject($relatedValueObject);
 
 		$repository->add($entity);
@@ -541,7 +541,7 @@ class CouchDbTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function subclassesAreQueriedByParentType() {
 		$repository = $this->objectManager->get('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository\TestEntityRepository');
 
-		$entity = $this->objectManager->create('TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntitySubclass');
+		$entity = new \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntitySubclass();
 		$entity->setName('Entity subclass');
 
 		$repository->add($entity);

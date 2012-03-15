@@ -37,12 +37,6 @@ class Client {
 	const PATTERN_DOCUMENT_ID = '/^[0-9a-zA-Z-_]/';
 
 	/**
-	 * @FLOW3\Inject
-	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
-	 */
-	protected $objectManager;
-
-	/**
 	 * @var \TYPO3\CouchDB\Client\HttpConnector
 	 */
 	protected $connector;
@@ -109,7 +103,7 @@ class Client {
 		if (isset($urlParts['path'])) {
 			$this->setDatabaseName(ltrim($urlParts['path'], '/'));
 		}
-		$this->connector = $this->objectManager->create('TYPO3\CouchDB\Client\HttpConnector', $host, $port, $username, $password, $this->options);
+		$this->connector = new \TYPO3\CouchDB\Client\HttpConnector($host, $port, $username, $password, $this->options);
 	}
 
 	/**

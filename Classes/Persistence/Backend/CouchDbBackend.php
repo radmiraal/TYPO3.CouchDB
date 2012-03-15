@@ -43,11 +43,6 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	protected $client;
 
 	/**
-	 * @var \TYPO3\FLOW3\Object\ObjectManagerInterface
-	 */
-	protected $objectManager;
-
-	/**
 	 * The URL of the CouchDB server. Valid URLs could be:
 	 * - http://127.0.0.1:5984
 	 * - http://user:pass@127.0.0.1:5984
@@ -122,14 +117,6 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	}
 
 	/**
-	 * @param \TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\FLOW3\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
-
-	/**
 	 * Initializes the backend and connects the CouchDB client,
 	 * will be called by PersistenceManager
 	 *
@@ -147,7 +134,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 * @return void
 	 */
 	protected function connect() {
-		$this->client = $this->objectManager->create('TYPO3\CouchDB\Client', $this->dataSourceName, array('logSlowQueries' => $this->logSlowQueries, 'slowQueryThreshold' => $this->slowQueryThreshold));
+		$this->client = new \TYPO3\CouchDB\Client($this->dataSourceName, array('logSlowQueries' => $this->logSlowQueries, 'slowQueryThreshold' => $this->slowQueryThreshold));
 		if ($this->databaseName !== NULL) {
 			$this->client->setDatabaseName($this->databaseName);
 		}
@@ -648,7 +635,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 				throw new \TYPO3\CouchDB\InvalidResultException('Could not get count from result', 1287074017, NULL, $result);
 			}
 		} else {
-			$view = $this->objectManager->create('TYPO3\CouchDB\QueryView', $query);
+			$view = new \TYPO3\CouchDB\QueryView($query);
 			$result = $this->queryView($view, array('query' => $query, 'count' => TRUE));
 			if ($result !== NULL && isset($result->rows) && is_array($result->rows)) {
 				return (count($result->rows) === 1) ? $result->rows[0]->value : 0;
@@ -692,7 +679,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 		if ($query instanceof \TYPO3\CouchDB\Persistence\LuceneQuery) {
 			return $this->getObjectDataByIndex($query->getIndex(), array('query' => $query));
 		} else {
-			$view = $this->objectManager->create('TYPO3\CouchDB\QueryView', $query);
+			$view = new \TYPO3\CouchDB\QueryView($query);
 			return $this->getObjectDataByView($view, array('query' => $query));
 		}
 	}
@@ -953,7 +940,7 @@ class CouchDbBackend extends \TYPO3\FLOW3\Persistence\Generic\Backend\AbstractBa
 	 */
 	public function getEntityByParentIdentifierView() {
 		if ($this->entityByParentIdentifierView === NULL) {
-			$this->entityByParentIdentifierView = $this->objectManager->create('TYPO3\CouchDB\EntityByParentIdentifierView');
+			$this->entityByParentIdentifierView = new \TYPO3\CouchDB\EntityByParentIdentifierView();
 		}
 		return $this->entityByParentIdentifierView;
 	}

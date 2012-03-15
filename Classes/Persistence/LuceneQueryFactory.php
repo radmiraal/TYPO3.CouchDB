@@ -49,7 +49,7 @@ class LuceneQueryFactory {
 	 * @return \TYPO3\CouchDB\Persistence\LuceneQuery
 	 */
 	public function create($index) {
-		return $this->objectManager->create('TYPO3\CouchDB\Persistence\LuceneQuery', $index, $this->reflectionService);
+		return new \TYPO3\CouchDB\Persistence\LuceneQuery($index, $this->reflectionService);
 	}
 
 }
