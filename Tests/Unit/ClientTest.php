@@ -47,11 +47,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function setUp() {
-		$connector = new \TYPO3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
-		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->once())->method('create')->with('TYPO3\CouchDB\Client\HttpConnector', '127.0.0.1', '5984', NULL, NULL, array())->will($this->returnValue($connector));
 		$this->client = $this->getAccessibleMock('TYPO3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984'));
-		$this->client->_set('objectManager', $mockObjectManager);
 		$this->client->initializeObject();
 
 		if ($this->client->databaseExists($this->databaseName)) {
@@ -311,11 +307,7 @@ class ClientTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function initializeObjectSetsDatabaseNameFromDataSourceName() {
-		$mockConnector = $this->getMock('TYPO3\CouchDB\Client\HttpConnector', array(), array(), '', FALSE);
-		$mockObjectManager = $this->getMock('TYPO3\FLOW3\Object\ObjectManagerInterface');
-		$mockObjectManager->expects($this->once())->method('create')->will($this->returnValue($mockConnector));
 		$client = $this->getAccessibleMock('TYPO3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984/' . $this->databaseName));
-		$client->_set('objectManager', $mockObjectManager);
 
 		$client->initializeObject();
 		$this->assertEquals($this->databaseName, $client->getDatabaseName());
