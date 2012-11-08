@@ -37,7 +37,7 @@ class EntityView implements \TYPO3\CouchDB\ViewInterface {
 	 * @return string
 	 */
 	public function getDesignName() {
-		return 'FLOW3';
+		return 'Flow';
 	}
 
 	/**

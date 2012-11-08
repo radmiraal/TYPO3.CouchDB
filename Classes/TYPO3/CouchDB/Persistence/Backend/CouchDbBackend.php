@@ -229,8 +229,8 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function collectMetadata($object) {
-		if (isset($object->FLOW3_Persistence_Metadata)) {
-			return $object->FLOW3_Persistence_Metadata;
+		if (isset($object->Flow_Persistence_Metadata)) {
+			return $object->Flow_Persistence_Metadata;
 		}
 	}
 
@@ -244,7 +244,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	protected function setRevisionMetadata($object, $revision) {
-		$object->FLOW3_Persistence_Metadata = array(
+		$object->Flow_Persistence_Metadata = array(
 			'CouchDB_Revision' => $revision
 		);
 	}
@@ -286,11 +286,12 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * @param boolean $dirty A dirty flag that is passed by reference and set to TRUE if a dirty property was found
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @return array
 	 */
 	protected function collectProperties($identifier, $object, array $properties, &$dirty) {
 		$propertyData = array();
 		foreach ($properties as $propertyName => $propertyMetaData) {
-			if ($propertyName === 'FLOW3_Persistence_Identifier') {
+			if ($propertyName === 'Persistence_Object_Identifier') {
 				continue;
 			}
 
@@ -433,7 +434,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * @return void
 	 */
 	protected function emitPersistedObject($object, $objectState) {
-		if (property_exists($object, 'FLOW3_Persistence_clone') && $object->FLOW3_Persistence_clone === TRUE) {
+		if (property_exists($object, 'Flow_Persistence_clone') && $object->Flow_Persistence_clone === TRUE) {
 				// Detach any deleted entity that has been merged afterwards
 			$this->deletedEntities->detach($object);
 		}

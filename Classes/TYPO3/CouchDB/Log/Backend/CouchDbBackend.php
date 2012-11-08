@@ -67,7 +67,7 @@ class CouchDbBackend extends \TYPO3\Flow\Log\Backend\AbstractBackend {
 	 * Default design document name for reading logs
 	 * @var string
 	 */
-	protected $designName = 'FLOW3_Internal';
+	protected $designName = 'Flow_Internal';
 
 	/**
 	 * Opens the CouchDB connection

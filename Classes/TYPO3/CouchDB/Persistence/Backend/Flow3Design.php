@@ -33,7 +33,7 @@ class Flow3Design extends \TYPO3\CouchDB\DesignDocument {
 	 * Design document name, should be the same as the design name of the query view
 	 * @var string
 	 */
-	protected $name = 'FLOW3';
+	protected $name = 'Flow';
 
 	/**
 	 * Constructor
