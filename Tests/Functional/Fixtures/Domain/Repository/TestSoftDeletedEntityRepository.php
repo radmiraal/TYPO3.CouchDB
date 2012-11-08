@@ -22,14 +22,14 @@ namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A test repository for functional tests
  *
- * @FLOW3\Scope("singleton")
+ * @Flow\Scope("singleton")
  */
-class TestSoftDeletedEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
+class TestSoftDeletedEntityRepository extends \TYPO3\Flow\Persistence\Repository {
 
 }
 ?>

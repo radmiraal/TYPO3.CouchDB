@@ -14,5 +14,5 @@ TYPO3:
     log:
       queryLogger:
         # Disable query log by default
-        backend: TYPO3\FLOW3\Log\Backend\NullBackend
+        backend: TYPO3\Flow\Log\Backend\NullBackend
         backendOptions: []

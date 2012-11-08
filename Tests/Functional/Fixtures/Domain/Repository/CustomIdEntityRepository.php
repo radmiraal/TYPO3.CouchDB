@@ -22,15 +22,15 @@ namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A test repository for functional tests
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @FLOW3\Scope("singleton")
+ * @Flow\Scope("singleton")
  */
-class CustomIdEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
+class CustomIdEntityRepository extends \TYPO3\Flow\Persistence\Repository {
 
 }
 ?>

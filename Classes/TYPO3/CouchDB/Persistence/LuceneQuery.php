@@ -22,14 +22,14 @@ namespace TYPO3\CouchDB\Persistence;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A special lucene query
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class LuceneQuery extends \TYPO3\FLOW3\Persistence\Generic\Query {
+class LuceneQuery extends \TYPO3\Flow\Persistence\Generic\Query {
 
 	/**
 	 * @var \TYPO3\CouchDB\Domain\Index\LuceneIndex
@@ -38,9 +38,9 @@ class LuceneQuery extends \TYPO3\FLOW3\Persistence\Generic\Query {
 
 	/**
 	 * @param \TYPO3\CouchDB\Domain\Index\LuceneIndex $index
-	 * @param \TYPO3\FLOW3\Reflection\ReflectionService $reflectionService
+	 * @param \TYPO3\Flow\Reflection\ReflectionService $reflectionService
 	 */
-	public function __construct(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index, \TYPO3\FLOW3\Reflection\ReflectionService $reflectionService) {
+	public function __construct(\TYPO3\CouchDB\Domain\Index\LuceneIndex $index, \TYPO3\Flow\Reflection\ReflectionService $reflectionService) {
 		$this->setIndex($index);
 		parent::__construct($index->getIndexName(), $reflectionService);
 	}

@@ -29,7 +29,7 @@ namespace TYPO3\CouchDB\Tests\Functional;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class GenericViewTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
+class GenericViewTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 
 	/**
 	 * @var \TYPO3\CouchDB\Client
@@ -43,7 +43,7 @@ class GenericViewTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
 	public function setUp() {
 		parent::setUp();
 
-		$configurationManager = $this->objectManager->get('TYPO3\FLOW3\Configuration\ConfigurationManager');
+		$configurationManager = $this->objectManager->get('TYPO3\Flow\Configuration\ConfigurationManager');
 		$backendOptions = $this->objectManager->getSettingsByPath(array('TYPO3', 'FLOW3', 'persistence', 'backendOptions'));
 
 		$this->client = new \TYPO3\CouchDB\Client($backendOptions['dataSourceName']);

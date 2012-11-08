@@ -22,14 +22,14 @@ namespace TYPO3\CouchDB\Domain\Index;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A CouchDB Lucene index for advanced queries
  * @see https://github.com/rnewson/couchdb-lucene
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @FLOW3\Scope("singleton")
+ * @Flow\Scope("singleton")
  */
 abstract class LuceneIndex {
 
@@ -54,7 +54,7 @@ abstract class LuceneIndex {
 	protected $configured = FALSE;
 
 	/**
-	 * @FLOW3\Inject
+	 * @Flow\Inject
 	 * @var \TYPO3\CouchDB\Persistence\LuceneQueryFactory
 	 */
 	protected $luceneQueryFactory;
@@ -116,31 +116,31 @@ abstract class LuceneIndex {
 
 	/**
 	 *
-	 * @param \TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint
+	 * @param \TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint
 	 * @return mixed
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
-	protected function buildStatementForConstraint(\TYPO3\FLOW3\Persistence\Generic\Qom\Constraint $constraint) {
-		if ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\Comparison) {
-			if ($constraint->getOperator() === \TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_LIKE ||
-				$constraint->getOperator() === \TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
+	protected function buildStatementForConstraint(\TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint) {
+		if ($constraint instanceof \TYPO3\Flow\Persistence\Generic\Qom\Comparison) {
+			if ($constraint->getOperator() === \TYPO3\Flow\Persistence\QueryInterface::OPERATOR_LIKE ||
+				$constraint->getOperator() === \TYPO3\Flow\Persistence\QueryInterface::OPERATOR_EQUAL_TO) {
 				$operandValue = $this->buildKeyForOperand($constraint->getOperand2());
 				if (strpos($operandValue, ' ') !== FALSE) {
 					$operandValue = $this->phrase($operandValue);
 				} else {
-					$allowWildcard = ($constraint->getOperator() === \TYPO3\FLOW3\Persistence\QueryInterface::OPERATOR_LIKE);
+					$allowWildcard = ($constraint->getOperator() === \TYPO3\Flow\Persistence\QueryInterface::OPERATOR_LIKE);
 					$operandValue = $this->escape($operandValue, $allowWildcard);
 				}
 				return $this->buildNameForOperand($constraint->getOperand1()) . ':' . $operandValue;
 			} else {
 				throw new \InvalidArgumentException('Comparison operator ' . get_class($constraint->getOperator()) . ' is not supported by CouchDB QueryIndex', 1300895208);
 			}
-		} elseif ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\LogicalAnd) {
+		} elseif ($constraint instanceof \TYPO3\Flow\Persistence\Generic\Qom\LogicalAnd) {
 			return '(' . $this->buildStatementForConstraint($constraint->getConstraint1()) . ' AND ' . $this->buildStatementForConstraint($constraint->getConstraint2()) . ')';
-		} elseif ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\LogicalOr) {
+		} elseif ($constraint instanceof \TYPO3\Flow\Persistence\Generic\Qom\LogicalOr) {
 			return '(' . $this->buildStatementForConstraint($constraint->getConstraint1()) . ' OR ' . $this->buildStatementForConstraint($constraint->getConstraint2()) . ')';
-		} elseif ($constraint instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\LogicalNot) {
+		} elseif ($constraint instanceof \TYPO3\Flow\Persistence\Generic\Qom\LogicalNot) {
 			return '(NOT ' . $this->buildStatementForConstraint($constraint->getConstraint()) . ')';
 		} else {
 			throw new \InvalidArgumentException('Constraint ' . get_class($constraint) . ' is not supported by CouchDB QueryIndex', 1299689061);
@@ -150,11 +150,11 @@ abstract class LuceneIndex {
 
 	/**
 	 *
-	 * @param \TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue $operand
+	 * @param \TYPO3\Flow\Persistence\Generic\Qom\PropertyValue $operand
 	 * @return string
 	 */
 	protected function buildNameForOperand($operand) {
-		if ($operand instanceof \TYPO3\FLOW3\Persistence\Generic\Qom\PropertyValue) {
+		if ($operand instanceof \TYPO3\Flow\Persistence\Generic\Qom\PropertyValue) {
 			return str_replace('.', '__', $operand->getPropertyName());
 		} else {
 			throw new \InvalidArgumentException('Operand ' . get_class($operand) . ' has to be of type PropertyValue.', 1299690265);
@@ -199,7 +199,7 @@ abstract class LuceneIndex {
 	 * @todo Move query statement out of the parameters
 	 */
 	public function buildIndexParameters(array $arguments) {
-		if (isset($arguments['query']) && $arguments['query'] instanceof \TYPO3\FLOW3\Persistence\QueryInterface) {
+		if (isset($arguments['query']) && $arguments['query'] instanceof \TYPO3\Flow\Persistence\QueryInterface) {
 			$query = $arguments['query'];
 
 			if (isset($arguments['count']) && $arguments['count'] === TRUE) {
@@ -221,12 +221,12 @@ abstract class LuceneIndex {
 			if ($constraint !== NULL) {
 				$parameters['q'] = $this->buildStatementForConstraint($constraint);
 			} else {
-				throw new \TYPO3\FLOW3\Exception('Call without constraint is not supported by CouchDB QueryIndex', 1299689063);
+				throw new \TYPO3\Flow\Exception('Call without constraint is not supported by CouchDB QueryIndex', 1299689063);
 			}
 
 			return $parameters;
 		} else {
-			throw new \TYPO3\FLOW3\Exception('query argument for QueryIndex must implement QueryInterface', 1299689063);
+			throw new \TYPO3\Flow\Exception('query argument for QueryIndex must implement QueryInterface', 1299689063);
 		}
 	}
 

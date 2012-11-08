@@ -22,12 +22,12 @@ namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A test entity for functional tests
  *
- * @FLOW3\Entity
+ * @Flow\Entity
  */
 class TestEntity {
 
@@ -68,13 +68,13 @@ class TestEntity {
 
 	/**
 	 * @var \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity>
-	 * @FLOW3\Lazy
+	 * @Flow\Lazy
 	 */
 	protected $relatedLazyNonRootEntities;
 
 	/**
 	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestLazyNonRootEntity
-	 * @FLOW3\Lazy
+	 * @Flow\Lazy
 	 */
 	protected $relatedLazyNonRootEntity;
 

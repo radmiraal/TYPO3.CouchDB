@@ -24,7 +24,7 @@ namespace TYPO3\CouchDB\Persistence;
 /**
  * A marker interface for a query logger
  */
-interface QueryLoggerInterface extends \TYPO3\FLOW3\Log\LoggerInterface {
+interface QueryLoggerInterface extends \TYPO3\Flow\Log\LoggerInterface {
 
 }
 ?>

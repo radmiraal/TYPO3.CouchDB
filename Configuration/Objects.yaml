@@ -1,19 +1,19 @@
-TYPO3\FLOW3\Persistence\Generic\Backend\BackendInterface:
+TYPO3\Flow\Persistence\Generic\Backend\BackendInterface:
   className: 'TYPO3\CouchDB\Persistence\Backend\CouchDbBackend'
-TYPO3\FLOW3\Persistence\PersistenceManagerInterface:
-  className: 'TYPO3\FLOW3\Persistence\Generic\PersistenceManager'
-TYPO3\FLOW3\Persistence\Generic\PersistenceManager:
+TYPO3\Flow\Persistence\PersistenceManagerInterface:
+  className: 'TYPO3\Flow\Persistence\Generic\PersistenceManager'
+TYPO3\Flow\Persistence\Generic\PersistenceManager:
   properties:
     backend:
       object: TYPO3\CouchDB\Persistence\Backend\CouchDbBackend
 TYPO3\CouchDB\Persistence\QueryLoggerInterface:
   scope: singleton
-  factoryObjectName: TYPO3\FLOW3\Log\LoggerFactory
+  factoryObjectName: TYPO3\Flow\Log\LoggerFactory
   arguments:
     1:
       value: TYPO3_CouchDB
     2:
-      value: TYPO3\FLOW3\Log\Logger
+      value: TYPO3\Flow\Log\Logger
     3:
       setting: TYPO3.CouchDB.log.queryLogger.backend
     4:

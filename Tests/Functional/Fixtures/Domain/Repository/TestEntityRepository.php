@@ -22,25 +22,25 @@ namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Repository;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A test repository for functional tests
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
- * @FLOW3\Scope("singleton")
+ * @Flow\Scope("singleton")
  */
-class TestEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
+class TestEntityRepository extends \TYPO3\Flow\Persistence\Repository {
 
 	/**
-	 * @FLOW3\Inject
+	 * @Flow\Inject
 	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Index\TestIndex
 	 */
 	protected $testIndex;
 
 	/**
 	 * @param string $color
-	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\Flow\Persistence\QueryResultInterface
 	 */
 	public function findByRelatedValueObjectColor($color) {
 		$query = $this->createQuery();
@@ -52,7 +52,7 @@ class TestEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
 
 	/**
 	 * @param string $name
-	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\Flow\Persistence\QueryResultInterface
 	 */
 	public function findByNameLike($name) {
 		$query = $this->testIndex->createQuery();
@@ -64,7 +64,7 @@ class TestEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
 
 	/**
 	 * @param string $color
-	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\Flow\Persistence\QueryResultInterface
 	 */
 	public function findByColor($color) {
 		$query = $this->testIndex->createQuery();
@@ -77,7 +77,7 @@ class TestEntityRepository extends \TYPO3\FLOW3\Persistence\Repository {
 	/**
 	 * @param string $name
 	 * @param string $color
-	 * @return \TYPO3\FLOW3\Persistence\QueryResultInterface
+	 * @return \TYPO3\Flow\Persistence\QueryResultInterface
 	 */
 	public function findByNameOrColor($name, $color) {
 		$query = $this->testIndex->createQuery();

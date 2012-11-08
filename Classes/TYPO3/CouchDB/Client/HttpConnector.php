@@ -22,7 +22,7 @@ namespace TYPO3\CouchDB\Client;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A HTTP connector for the CouchDB client
@@ -93,7 +93,7 @@ class HttpConnector {
 		$this->options['username'] = $username;
 		$this->options['password'] = $password;
 
-		$this->options = \TYPO3\FLOW3\Utility\Arrays::arrayMergeRecursiveOverrule($this->options, $options, TRUE);
+		$this->options = \TYPO3\Flow\Utility\Arrays::arrayMergeRecursiveOverrule($this->options, $options, TRUE);
 	}
 
 	/**

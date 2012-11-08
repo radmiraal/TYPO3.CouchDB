@@ -27,7 +27,7 @@ namespace TYPO3\CouchDB;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class InvalidResultException extends \TYPO3\FLOW3\Exception {
+class InvalidResultException extends \TYPO3\Flow\Exception {
 
 	/**
 	 * @var object

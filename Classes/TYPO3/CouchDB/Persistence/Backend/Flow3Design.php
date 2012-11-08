@@ -22,7 +22,7 @@ namespace TYPO3\CouchDB\Persistence\Backend;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 
 /**
  * A CouchDB design document to specify views

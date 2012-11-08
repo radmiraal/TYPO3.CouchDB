@@ -29,7 +29,7 @@ namespace TYPO3\CouchDB\Tests\Functional\Log\Backend;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class CouchDbBackendTest extends \TYPO3\FLOW3\Tests\FunctionalTestCase {
+class CouchDbBackendTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 
 	/**
 	 * @var string

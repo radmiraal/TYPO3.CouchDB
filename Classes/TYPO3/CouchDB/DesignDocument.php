@@ -29,7 +29,7 @@ namespace TYPO3\CouchDB;
 class DesignDocument {
 
 	/**
-	 * @var \TYPO3\FLOW3\Reflection\ReflectionService
+	 * @var \TYPO3\Flow\Reflection\ReflectionService
 	 */
 	private $reflectionService;
 
@@ -262,10 +262,10 @@ class DesignDocument {
 
 	/**
 	 *
-	 * @param \TYPO3\FLOW3\Reflection\ReflectionService $reflectionService
+	 * @param \TYPO3\Flow\Reflection\ReflectionService $reflectionService
 	 * @return void
 	 */
-	public function injectReflectionService(\TYPO3\FLOW3\Reflection\ReflectionService $reflectionService) {
+	public function injectReflectionService(\TYPO3\Flow\Reflection\ReflectionService $reflectionService) {
 		$this->reflectionService = $reflectionService;
 	}
 

@@ -22,13 +22,13 @@ namespace TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model;
  *                                                                        */
 
 use Doctrine\ORM\Mapping as ORM;
-use TYPO3\FLOW3\Annotations as FLOW3;
+use TYPO3\Flow\Annotations as Flow;
 use TYPO3\CouchDB\Annotations as CouchDB;
 
 /**
  * A test entity for functional tests
  *
- * @FLOW3\Entity
+ * @Flow\Entity
  * @CouchDB\RemoveStrategy("SOFT_DELETE")
  */
 class TestSoftDeletedEntity {

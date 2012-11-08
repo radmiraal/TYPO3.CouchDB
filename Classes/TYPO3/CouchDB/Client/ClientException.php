@@ -26,7 +26,7 @@ namespace TYPO3\CouchDB\Client;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class ClientException extends \TYPO3\FLOW3\Persistence\Exception {
+class ClientException extends \TYPO3\Flow\Persistence\Exception {
 
 	/**
 	 * @var array

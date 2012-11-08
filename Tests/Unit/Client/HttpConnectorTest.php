@@ -26,7 +26,7 @@ namespace TYPO3\CouchDB\Tests\Unit\Client;
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class HttpConnectorTest extends \TYPO3\FLOW3\Tests\UnitTestCase {
+class HttpConnectorTest extends \TYPO3\Flow\Tests\UnitTestCase {
 
 	/**
 	 * @var \TYPO3\CouchDB\Client\HttpConnector
