@@ -1,5 +1,5 @@
 TYPO3:
-  FLOW3:
+  Flow:
     persistence:
       # Options for the CouchDB backend
       backendOptions:
