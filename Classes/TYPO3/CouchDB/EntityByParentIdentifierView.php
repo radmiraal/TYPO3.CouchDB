@@ -2,7 +2,7 @@
 namespace TYPO3\CouchDB;
 
 /*                                                                        *
- * This script belongs to the FLOW3 package "CouchDB".                    *
+ * This script belongs to the Flow package "CouchDB".                     *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -32,7 +32,7 @@ use TYPO3\Flow\Annotations as Flow;
 class EntityByParentIdentifierView implements \TYPO3\CouchDB\ViewInterface {
 
 	/**
-	 * Get the design name where the view is defined. This is FLOW3 as a
+	 * Get the design name where the view is defined. This is Flow as a
 	 * default for this view.
 	 *
 	 * @return string

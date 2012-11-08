@@ -2,7 +2,7 @@
 namespace TYPO3\CouchDB;
 
 /*                                                                        *
- * This script belongs to the FLOW3 package "CouchDB".                    *
+ * This script belongs to the Flow package "CouchDB".                     *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *

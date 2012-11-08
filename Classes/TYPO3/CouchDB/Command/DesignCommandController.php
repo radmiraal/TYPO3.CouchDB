@@ -2,7 +2,7 @@
 namespace TYPO3\CouchDB\Command;
 
 /*                                                                        *
- * This script belongs to the FLOW3 package "CouchDB".                    *
+ * This script belongs to the Flow package "CouchDB".                     *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -44,7 +44,7 @@ class DesignCommandController extends \TYPO3\Flow\Cli\CommandController {
 	protected $objectManager;
 
 	/**
-	 * Synchronize designs from FLOW3 declarations to CouchDB documents
+	 * Synchronize designs from Flow declarations to CouchDB documents
 	 *
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>

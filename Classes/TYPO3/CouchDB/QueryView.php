@@ -2,7 +2,7 @@
 namespace TYPO3\CouchDB;
 
 /*                                                                        *
- * This script belongs to the FLOW3 package "CouchDB".                    *
+ * This script belongs to the Flow package "CouchDB".                     *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License as published by the *
@@ -199,7 +199,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	}
 
 	/**
-	 * Get the design name where the view is defined. This defaults to FLOW3
+	 * Get the design name where the view is defined. This defaults to Flow
 	 * for a QueryView.
 	 *
 	 * @return string
