@@ -117,6 +117,7 @@ abstract class LuceneIndex {
 	/**
 	 *
 	 * @param \TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint
+	 * @throws \InvalidArgumentException
 	 * @return mixed
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
@@ -151,6 +152,7 @@ abstract class LuceneIndex {
 	/**
 	 *
 	 * @param \TYPO3\Flow\Persistence\Generic\Qom\PropertyValue $operand
+	 * @throws \InvalidArgumentException
 	 * @return string
 	 */
 	protected function buildNameForOperand($operand) {
@@ -164,6 +166,8 @@ abstract class LuceneIndex {
 	/**
 	 *
 	 * @param mixed $operand The operand as string or object
+	 * @throws \InvalidArgumentException
+	 * @return void
 	 */
 	protected function buildKeyForOperand($operand) {
 		if (is_string($operand)) {
@@ -194,6 +198,7 @@ abstract class LuceneIndex {
 	 * Get CouchDB query parameters by arguments
 	 *
 	 * @param array $arguments
+	 * @throws \TYPO3\Flow\Exception
 	 * @return array CouchDB view query parameters
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 * @todo Move query statement out of the parameters
@@ -262,6 +267,7 @@ abstract class LuceneIndex {
 	 * NOTE: inside a phrase fewer characters need escaped, use {@link Apache_Solr_Service::escapePhrase()} instead
 	 *
 	 * @param string $value
+	 * @param boolean $allowWildcard
 	 * @return string
 	 */
 	protected function escape($value, $allowWildcard = FALSE) {

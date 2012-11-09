@@ -91,6 +91,7 @@ class Client {
 	 * @return void
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
+	 * @throws \InvalidArgumentException
 	 */
 	public function initializeObject() {
 		if (($urlParts = parse_url($this->dataSourceName)) === FALSE) {
@@ -275,6 +276,7 @@ class Client {
 	 * Update (delete) multiple documents
 	 *
 	 * @param array $documents The documents as array
+	 * @param array $queryOptions
 	 * @return object
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -390,6 +392,7 @@ class Client {
 	 * defined in PATTERN_DOCUMENT_ID.
 	 *
 	 * @param string $id The document id
+	 * @throws \TYPO3\Flow\Persistence\Exception
 	 * @return void
 	 */
 	protected function checkDocumentId($id) {
@@ -408,6 +411,7 @@ class Client {
 
 	/**
 	 * @return string
+	 * @throws \TYPO3\Flow\Persistence\Exception
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function getDatabaseName() {

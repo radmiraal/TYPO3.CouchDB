@@ -96,6 +96,7 @@ class CouchDbBackend extends \TYPO3\Flow\Log\Backend\AbstractBackend {
 	 * @param string $packageKey Key of the package triggering the log (determined automatically if not specified)
 	 * @param string $className Name of the class triggering the log (determined automatically if not specified)
 	 * @param string $methodName Name of the method triggering the log (determined automatically if not specified)
+	 * @throws \TYPO3\CouchDB\Client\NotFoundException
 	 * @return void
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @api

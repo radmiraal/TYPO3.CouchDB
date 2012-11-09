@@ -107,6 +107,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	/**
 	 *
 	 * @param \TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint
+	 * @throws \InvalidArgumentException
 	 * @return array
 	 */
 	protected function buildEmitsForConstraint(\TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint) {
@@ -134,6 +135,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	/**
 	 *
 	 * @param \TYPO3\Flow\Persistence\Generic\Qom\Operand $operand
+	 * @throws \InvalidArgumentException
 	 * @return \stdClass
 	 */
 	protected function buildEmitForOperand(\TYPO3\Flow\Persistence\Generic\Qom\Operand $operand) {
@@ -168,6 +170,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	/**
 	 *
 	 * @param \TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint
+	 * @throws \InvalidArgumentException
 	 * @return mixed
 	 */
 	protected function buildKeyForConstraint(\TYPO3\Flow\Persistence\Generic\Qom\Constraint $constraint) {
@@ -189,6 +192,8 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	/**
 	 *
 	 * @param mixed $operand The operand as string or object
+	 * @throws \InvalidArgumentException
+	 * @return mixed
 	 */
 	protected function buildKeyForOperand($operand) {
 		if (is_string($operand)) {
@@ -222,6 +227,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	 * Get CouchDB query parameters by arguments
 	 *
 	 * @param array $arguments
+	 * @throws \InvalidArgumentException
 	 * @return array CouchDB view query parameters
 	 */
 	public function buildViewParameters(array $arguments) {
@@ -297,6 +303,7 @@ class QueryView implements \TYPO3\CouchDB\ViewInterface {
 	/**
 	 * Get the index value (key) for an emit
 	 *
+	 * @param mixed $emit
 	 * @return string
 	 */
 	protected function buildEmitIndex($emit) {

@@ -165,6 +165,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * @param string $identifier
 	 * @param string $parentIdentifier
 	 * @param array $objectData
+	 * @throws \TYPO3\Flow\Persistence\Exception
 	 * @return integer one of self::OBJECTSTATE_*
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -385,6 +386,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * deleted and is not marked for deletion itself.
 	 *
 	 * @param type $identifier Identifier of the entity to check
+	 * @throws \TYPO3\Flow\Persistence\Exception
 	 * @return void
 	 */
 	protected function checkEntityReferencesForDeletion($identifier) {
@@ -624,6 +626,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * Returns the number of records matching the query.
 	 *
 	 * @param \TYPO3\Flow\Persistence\QueryInterface $query
+	 * @throws \TYPO3\CouchDB\InvalidResultException
 	 * @return integer
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -650,6 +653,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * Returns the object data for the given identifier.
 	 *
 	 * @param string $identifier The UUID or Hash of the object
+	 * @param string $objectType
 	 * @return array The object data of the object or FALSE if the identifier was not found
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 * @todo Maybe introduce a ObjectNotFound exception?
@@ -747,6 +751,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 *
 	 * @param \TYPO3\CouchDB\Domain\Index\LuceneIndex $index The index to execute
 	 * @param array $arguments An array with arguments to the index
+	 * @throws Client\ClientException
 	 * @return object The results of the index
 	 * @author Felix Oertel <oertel@networkteam.com>
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
@@ -774,6 +779,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 *
 	 * @param array $documents Documents as objects
 	 * @param array &$knownObjects
+	 * @throws \TYPO3\CouchDB\InvalidResultException
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -876,6 +882,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * Convert a CouchDB result to an array of documents
 	 *
 	 * @param object $result
+	 * @throws \TYPO3\CouchDB\InvalidResultException
 	 * @return array
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
@@ -900,6 +907,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * the database on the fly.
 	 *
 	 * @param \Closure $couchDbOperation
+	 * @throws \TYPO3\Flow\Persistence\Exception
 	 * @return mixed
 	 */
 	protected function doOperation(\Closure $couchDbOperation) {

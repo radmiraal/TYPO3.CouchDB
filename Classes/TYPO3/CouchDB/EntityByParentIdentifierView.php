@@ -55,6 +55,7 @@ class EntityByParentIdentifierView implements \TYPO3\CouchDB\ViewInterface {
 	 * Get CouchDB query parameters by arguments
 	 *
 	 * @param array $arguments
+	 * @throws \Exception
 	 * @return array CouchDB view query parameters
 	 */
 	public function buildViewParameters(array $arguments) {

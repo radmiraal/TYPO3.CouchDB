@@ -114,6 +114,7 @@ class DesignDocument {
 	}
 
 	/**
+	 * @throws \TYPO3\CouchDB\Client\NotFoundException
 	 * @return void
 	 */
 	public function synchronize() {
@@ -141,6 +142,9 @@ class DesignDocument {
 		$this->client->createDocument($designDocument);
 	}
 
+	/**
+	 * @return array
+	 */
 	protected function getDeclarations() {
 		$declarations = array();
 		$methodNames = get_class_methods(get_class($this));

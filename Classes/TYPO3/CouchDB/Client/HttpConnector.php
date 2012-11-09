@@ -98,7 +98,7 @@ class HttpConnector {
 
 	/**
 	 */
-	public function  shutdownObject() {
+	public function shutdownObject() {
 		if (is_resource($this->connection)) {
 			fclose($this->connection);
 		}
@@ -123,6 +123,7 @@ class HttpConnector {
 	 *
 	 * @param string $method
 	 * @param array $params
+	 * @throws \RuntimeException
 	 * @return mixed An object if the response is decoded or the response as a string if requestOptions['raw'] === TRUE
 	 */
 	public function __call($method, array $params) {
@@ -145,9 +146,10 @@ class HttpConnector {
 	 * Checks if the connection already has been established, or tries to
 	 * establish the connection, if not done yet.
 	 *
+	 * @throws \RuntimeException
 	 * @return void
 	 */
-	protected function checkConnection() {
+	public function checkConnection() {
 			// If the connection could not be established, fsockopen sadly does not
 			// only return false (as documented), but also always issues a warning.
 		if (($this->connection === NULL)
@@ -228,6 +230,11 @@ class HttpConnector {
 	 * @param string $data
 	 * @param array $requestOptions
 	 * @param integer $reconnectAttempt
+	 * @throws \RuntimeException
+	 * @throws \TYPO3\CouchDB\Client\InvalidResultException
+	 * @throws \TYPO3\CouchDB\Client\NotFoundException
+	 * @throws \TYPO3\CouchDB\Client\ConflictException
+	 * @throws \TYPO3\CouchDB\Client\ClientException
 	 * @return mixed
 	 */
 	protected function request($method, $path, array $query = NULL, $data = NULL, $requestOptions = NULL, $reconnectAttempt = 0) {
