@@ -48,11 +48,17 @@ class ClientTest extends \TYPO3\Flow\Tests\UnitTestCase {
 	 */
 	public function setUp() {
 		$this->client = $this->getAccessibleMock('TYPO3\CouchDB\Client', array('dummy'), array('http://127.0.0.1:5984'));
-		$this->client->initializeObject();
 
-		if ($this->client->databaseExists($this->databaseName)) {
-			$this->client->deleteDatabase($this->databaseName);
+		try {
+			$this->client->initializeObject();
+
+			if ($this->client->databaseExists($this->databaseName)) {
+				$this->client->deleteDatabase($this->databaseName);
+			}
+		} catch (\RuntimeException $e) {
+			$this->markTestSkipped('We skip the test as we can not connect to CouchDB Server');
 		}
+
 		$this->client->createDatabase($this->databaseName);
 		$this->client->setDatabaseName($this->databaseName);
 	}

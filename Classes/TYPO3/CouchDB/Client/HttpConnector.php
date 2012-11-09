@@ -151,7 +151,7 @@ class HttpConnector {
 			// If the connection could not be established, fsockopen sadly does not
 			// only return false (as documented), but also always issues a warning.
 		if (($this->connection === NULL)
-				&& (($this->connection = fsockopen($this->options['host'], $this->options['port'], $errno, $errstr)) === FALSE)) {
+				&& (($this->connection = @fsockopen($this->options['host'], $this->options['port'], $errno, $errstr)) === FALSE)) {
 			$this->connection = NULL;
 			throw new \RuntimeException('Could not connect to server at ' . $this->options['host'] . ':' . $this->options['port'] . ' ' . $errno . ': "' . $errstr . '"', 1287339586);
 		}

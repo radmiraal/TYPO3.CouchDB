@@ -38,7 +38,12 @@ class HttpConnectorTest extends \TYPO3\Flow\Tests\UnitTestCase {
 	 */
 	public function setUp() {
 		$this->connector = new \TYPO3\CouchDB\Client\HttpConnector('127.0.0.1', 5984);
-		$this->connector->put('/flow3_test');
+
+		try {
+			$this->connector->put('/flow3_test');
+		} catch (\RuntimeException $exception) {
+			$this->markTestSkipped('We skip the test as we can not connect to CouchDB Server');
+		}
 	}
 
 	/**
