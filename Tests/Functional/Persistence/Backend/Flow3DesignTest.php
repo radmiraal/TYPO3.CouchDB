@@ -27,7 +27,7 @@ namespace TYPO3\CouchDB\Tests\Functional\Persistence\Backend;
  * Make sure to configure a test database for the Testing context in
  * Configuration/Testing/Settings.yaml.
  */
-class Flow3DesignTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
+class FlowDesignTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 
 	/**
 	 * @var \TYPO3\CouchDB\Client
@@ -35,7 +35,7 @@ class Flow3DesignTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 	protected $client;
 
 	/**
-	 * @var \TYPO3\CouchDB\Persistence\Backend\Flow3Design
+	 * @var \TYPO3\CouchDB\Persistence\Backend\FlowDesign
 	 */
 	protected $design;
 
@@ -59,7 +59,7 @@ class Flow3DesignTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 			$this->client->setDatabaseName($backendOptions['database']);
 		}
 
-		$this->design = new \TYPO3\CouchDB\Persistence\Backend\Flow3Design($this->client);
+		$this->design = new \TYPO3\CouchDB\Persistence\Backend\FlowDesign($this->client);
 
 		if ($this->client->databaseExists()) {
 			$this->client->deleteDatabase();

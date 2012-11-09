@@ -44,7 +44,7 @@ class CouchDbLuceneTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 		parent::setUp();
 
 		$configurationManager = $this->objectManager->get('TYPO3\Flow\Configuration\ConfigurationManager');
-		$backendOptions = $this->objectManager->getSettingsByPath(array('TYPO3', 'FLOW3', 'persistence', 'backendOptions'));
+		$backendOptions = $this->objectManager->getSettingsByPath(array('TYPO3', 'Flow', 'persistence', 'backendOptions'));
 
 		if (!$backendOptions['enableCouchdbLucene']) {
 			$this->markTestSkipped('CouchDB Lucene not enabled');

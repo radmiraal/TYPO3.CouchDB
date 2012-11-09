@@ -27,7 +27,7 @@ use TYPO3\Flow\Annotations as Flow;
 /**
  * A CouchDB design document to specify views
  */
-class Flow3Design extends \TYPO3\CouchDB\DesignDocument {
+class FlowDesign extends \TYPO3\CouchDB\DesignDocument {
 
 	/**
 	 * Design document name, should be the same as the design name of the query view

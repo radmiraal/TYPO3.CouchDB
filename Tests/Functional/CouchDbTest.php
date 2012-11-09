@@ -474,14 +474,14 @@ class CouchDbTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 
 		$object = $repository->findOneByName('Entity with single valueobject');
 
-		$metadata = $object->FLOW3_Persistence_Metadata;
+		$metadata = $object->Flow_Persistence_Metadata;
 		$revision = $metadata['CouchDB_Revision'];
 
 		$this->tearDown();
 
 		$object = $repository->findOneByName('Entity with single valueobject');
 
-		$metadata = $object->FLOW3_Persistence_Metadata;
+		$metadata = $object->Flow_Persistence_Metadata;
 		$newRevision = $metadata['CouchDB_Revision'];
 
 		$this->assertEquals($revision, $newRevision);

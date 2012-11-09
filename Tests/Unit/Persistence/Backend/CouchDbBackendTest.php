@@ -169,9 +169,9 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 	 * @author Christopher Hlubek <hlubek@networkteam.com>
 	 */
 	public function collectMetadataReturnsProxyMetadata() {
-		$object = $this->getMock('stdClass', array('FLOW3_AOP_Proxy_hasProperty', 'FLOW3_AOP_Proxy_getProperty'));
+		$object = $this->getMock('stdClass', array('Flow_AOP_Proxy_hasProperty', 'Flow_AOP_Proxy_getProperty'));
 		$metadata = array('metadata' => 'foo');
-		$object->FLOW3_Persistence_Metadata = $metadata;
+		$object->Flow_Persistence_Metadata = $metadata;
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('dummy'));
 		$result = $backend->_call('collectMetadata', $object);
@@ -340,7 +340,7 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 	public function collectPropertiesSkipsInternalIdentifierProperty() {
 		$object = $this->getMock('TYPO3\Flow\Aop\ProxyInterface');
 		$object->foo = 'baz';
-		$object->FLOW3_Persistence_Identifier = '9febd71d-da12-4c80-ae6e-a4edc24f9a57';
+		$object->Persistence_Object_Identifier = '9febd71d-da12-4c80-ae6e-a4edc24f9a57';
 
 		$mockPersistenceSession = $this->getMock('TYPO3\Flow\Persistence\Generic\Session');
 
@@ -353,14 +353,14 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 				'type' => 'string',
 				'metadata' => 'bar',
 			),
-			'FLOW3_Persistence_Identifier' => array(
+			'Persistence_Object_Identifier' => array(
 				'multivalue' => false,
 				'type' => 'string'
 			)
 		);
 		$dirty = FALSE;
 		$properties = $backend->_callRef('collectProperties', $identifier, $object, $properties, $dirty);
-		$this->assertFalse(isset($properties['FLOW3_Persistence_Identifier']), 'Internal identifier property should be skipped');
+		$this->assertFalse(isset($properties['Persistence_Object_Identifier']), 'Internal identifier property should be skipped');
 	}
 
 	/**
@@ -457,8 +457,8 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 	public function reallyRemoveEntityDeletesDocumentWithRevisionFromObject() {
 		$mockObject = $this->getMock('TYPO3\Flow\Aop\ProxyInterface');
 		$mockClient = $this->getMock('TYPO3\CouchDB\Client', array(), array(), '', FALSE);
-		$mockFlow3Design = $this->getMock('TYPO3\CouchDB\Persistence\Backend\Flow3Design', array(), array(), '', FALSE);
-		$mockFlow3Design->expects($this->any())->method('entityReferences')->will($this->returnValue(array()));
+		$mockFlowDesign = $this->getMock('TYPO3\CouchDB\Persistence\Backend\FlowDesign', array(), array(), '', FALSE);
+		$mockFlowDesign->expects($this->any())->method('entityReferences')->will($this->returnValue(array()));
 
 		$mockPersistenceSession = $this->getMock('TYPO3\Flow\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->once())->method('getIdentifierByObject')->with($mockObject)->will($this->returnValue('xyz'));
@@ -468,7 +468,7 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
 		$backend->_set('client', $mockClient);
-		$backend->_set('flow3Design', $mockFlow3Design);
+		$backend->_set('flowDesign', $mockFlowDesign);
 		$backend->injectReflectionService($mockReflectionService);
 
 		$backend->expects($this->once())->method('getRevisionByObject')->with($mockObject)->will($this->returnValue('5-revisionid'));
@@ -483,8 +483,8 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 	 */
 	public function reallyRemoveEntityCallsRemoveEntitiesByParentAndEmitRemovedObject() {
 		$mockObject = $this->getMock('TYPO3\Flow\Aop\ProxyInterface');
-		$mockFlow3Design = $this->getMock('TYPO3\CouchDB\Persistence\Backend\Flow3Design', array(), array(), '', FALSE);
-		$mockFlow3Design->expects($this->any())->method('entityReferences')->will($this->returnValue(array()));
+		$mockFlowDesign = $this->getMock('TYPO3\CouchDB\Persistence\Backend\FlowDesign', array(), array(), '', FALSE);
+		$mockFlowDesign->expects($this->any())->method('entityReferences')->will($this->returnValue(array()));
 
 		$mockPersistenceSession = $this->getMock('TYPO3\Flow\Persistence\Generic\Session');
 		$mockPersistenceSession->expects($this->any())->method('getIdentifierByObject')->will($this->returnValue('xyz'));
@@ -493,7 +493,7 @@ class CouchDbBackendTest extends \TYPO3\Flow\Tests\UnitTestCase {
 
 		$backend = $this->getAccessibleMock('TYPO3\CouchDB\Persistence\Backend\CouchDbBackend', array('doOperation', 'removeEntitiesByParent', 'getRevisionByObject', 'emitRemovedObject'));
 		$backend->injectPersistenceSession($mockPersistenceSession);
-		$backend->_set('flow3Design', $mockFlow3Design);
+		$backend->_set('flowDesign', $mockFlowDesign);
 		$backend->injectReflectionService($mockReflectionService);
 
 		$backend->expects($this->any())->method('getRevisionByObject')->will($this->returnValue('7-abc'));

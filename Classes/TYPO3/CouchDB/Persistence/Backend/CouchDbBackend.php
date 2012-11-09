@@ -75,9 +75,9 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	protected $entityByParentIdentifierView;
 
 	/**
-	 * @var \TYPO3\CouchDB\Persistence\Backend\Flow3Design
+	 * @var \TYPO3\CouchDB\Persistence\Backend\FlowDesign
 	 */
-	protected $flow3Design;
+	protected $flowDesign;
 
 	/**
 	 * @var boolean
@@ -138,7 +138,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 		if ($this->databaseName !== NULL) {
 			$this->client->setDatabaseName($this->databaseName);
 		}
-		$this->flow3Design = new Flow3Design($this->client);
+		$this->flow3Design = new FlowDesign($this->client);
 	}
 
 	/**
@@ -388,7 +388,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 * @return void
 	 */
 	protected function checkEntityReferencesForDeletion($identifier) {
-		$referencedIdentifier = $this->flow3Design->entityReferences($identifier);
+		$referencedIdentifier = $this->flowDesign->entityReferences($identifier);
 		$referenceByIdentifier = array();
 		foreach ($referencedIdentifier as $reference) {
 			$referenceByIdentifier[$reference] = TRUE;

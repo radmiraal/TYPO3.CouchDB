@@ -44,7 +44,7 @@ class GenericViewTest extends \TYPO3\Flow\Tests\FunctionalTestCase {
 		parent::setUp();
 
 		$configurationManager = $this->objectManager->get('TYPO3\Flow\Configuration\ConfigurationManager');
-		$backendOptions = $this->objectManager->getSettingsByPath(array('TYPO3', 'FLOW3', 'persistence', 'backendOptions'));
+		$backendOptions = $this->objectManager->getSettingsByPath(array('TYPO3', 'Flow', 'persistence', 'backendOptions'));
 
 		$this->client = new \TYPO3\CouchDB\Client($backendOptions['dataSourceName']);
 		if (isset($backendOptions['database']) && $backendOptions['database'] !== '') {
