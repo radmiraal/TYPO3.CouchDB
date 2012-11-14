@@ -908,6 +908,7 @@ class CouchDbBackend extends \TYPO3\Flow\Persistence\Generic\Backend\AbstractBac
 	 *
 	 * @param \Closure $couchDbOperation
 	 * @throws \TYPO3\Flow\Persistence\Exception
+	 * @throws Client\ClientException
 	 * @return mixed
 	 */
 	protected function doOperation(\Closure $couchDbOperation) {

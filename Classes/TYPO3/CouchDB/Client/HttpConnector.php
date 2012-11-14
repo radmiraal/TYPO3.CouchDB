@@ -149,7 +149,7 @@ class HttpConnector {
 	 * @throws \RuntimeException
 	 * @return void
 	 */
-	public function checkConnection() {
+	protected function checkConnection() {
 			// If the connection could not be established, fsockopen sadly does not
 			// only return false (as documented), but also always issues a warning.
 		if (($this->connection === NULL)

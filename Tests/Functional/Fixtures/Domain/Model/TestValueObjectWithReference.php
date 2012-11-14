@@ -33,8 +33,9 @@ class TestValueObjectWithReference {
 
 	/**
 	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 * @ORM\OneToOne
 	 */
-    protected $entity;
+	protected $entity;
 
 	/**
 	 * @param \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity $entity

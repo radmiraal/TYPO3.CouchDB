@@ -53,11 +53,13 @@ class TestEntity {
 
 	/**
 	 * @var \TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity
+	 * @ORM\OneToOne
 	 */
 	protected $relatedEntity;
 
 	/**
 	 * @var \Doctrine\Common\Collections\ArrayCollection<\TYPO3\CouchDB\Tests\Functional\Fixtures\Domain\Model\TestEntity>
+	 * @ORM\OneToOne
 	 */
 	protected $relatedEntities;
 
