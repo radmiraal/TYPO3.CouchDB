@@ -1,11 +1,11 @@
-TYPO3\Flow\Persistence\Generic\Backend\BackendInterface:
-  className: 'TYPO3\CouchDB\Persistence\Backend\CouchDbBackend'
-TYPO3\Flow\Persistence\PersistenceManagerInterface:
-  className: 'TYPO3\Flow\Persistence\Generic\PersistenceManager'
-TYPO3\Flow\Persistence\Generic\PersistenceManager:
-  properties:
-    backend:
-      object: TYPO3\CouchDB\Persistence\Backend\CouchDbBackend
+#TYPO3\Flow\Persistence\Generic\Backend\BackendInterface:
+#  className: 'TYPO3\CouchDB\Persistence\Backend\CouchDbBackend'
+#TYPO3\Flow\Persistence\PersistenceManagerInterface:
+#  className: 'TYPO3\Flow\Persistence\Generic\PersistenceManager'
+#TYPO3\Flow\Persistence\Generic\PersistenceManager:
+#  properties:
+#    backend:
+#      object: TYPO3\CouchDB\Persistence\Backend\CouchDbBackend
 TYPO3\CouchDB\Persistence\QueryLoggerInterface:
   scope: singleton
   factoryObjectName: TYPO3\Flow\Log\LoggerFactory
